@@ -1,0 +1,3713 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ôn Tập Trắc Nghiệm CAA201</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f3f4f6; 
+            color: #1f2937; 
+            line-height: 1.6; 
+            padding: 20px; 
+            max-width: 800px; 
+            margin: 0 auto; 
+        }
+        h1 { text-align: center; color: #2563eb; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #6b7280; font-size: 0.95em; margin-bottom: 20px; font-style: italic; }
+        
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background-color: #2563eb; }
+        .btn.test-mode { background-color: #8b5cf6; }
+        .btn.test-mode:hover { background-color: #7c3aed; }
+        .btn.wrong-mode { background-color: #ef4444; }
+        .btn.wrong-mode:hover { background-color: #dc2626; }
+        
+        .test-menu {
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #e0e7ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px dashed #8b5cf6;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .test-menu.show { display: flex; }
+        .btn-small {
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-small:hover { background-color: #4f46e5; transform: scale(1.05); }
+        .btn-re-shuffle { background-color: #4b5563; }
+        .btn-re-shuffle:hover { background-color: #374151; }
+
+        .stats { text-align: center; font-weight: bold; margin-bottom: 20px; color: #047857; background: #d1fae5; padding: 10px; border-radius: 8px; }
+        
+        .question-container { 
+            background: #ffffff; 
+            border-radius: 10px; 
+            padding: 25px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+            border-left: 5px solid #3b82f6; 
+        }
+        .question-text { 
+            font-size: 1.1em; 
+            font-weight: 600; 
+            margin-bottom: 15px; 
+            color: #111827; 
+        }
+        .options { 
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+        }
+        .options li { 
+            padding: 12px 15px; 
+            margin-bottom: 8px; 
+            background-color: #f9fafb; 
+            border-radius: 6px; 
+            border: 1px solid #e5e7eb; 
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .options li:hover { background-color: #f3f4f6; }
+        
+        .options li.correct { 
+            background-color: #d1fae5 !important; 
+            border-color: #10b981; 
+            color: #065f46; 
+            font-weight: bold; 
+        }
+        .options li.wrong { 
+            background-color: #fee2e2 !important; 
+            border-color: #ef4444; 
+            color: #991b1b; 
+            font-weight: bold;
+        }
+        .options li.disabled { cursor: not-allowed; pointer-events: none; }
+        
+        .mode-title { text-align: center; margin-bottom: 20px; color: #374151; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <h1>Trang Ôn Tập CAA201</h1>
+    <p class="subtitle">👉 Nhấn vào các đáp án (A, B, C, D) để trả lời. Hệ thống sẽ tự lưu lại câu sai!</p>
+    
+    <div class="toolbar">
+        <button class="btn" onclick="showAll()">📚 Học tất cả</button>
+        <button class="btn test-mode" onclick="toggleTestMenu()">🎲 Thi thử (Theo Đề)</button>
+        <button class="btn wrong-mode" onclick="showWrongQuestions()">⚠️ Ôn câu sai (<span id="wrong-count">0</span>)</button>
+    </div>
+
+    <div id="test-menu" class="test-menu"></div>
+    <div id="stats" class="stats">Đang tải câu hỏi...</div>
+    <h2 id="mode-title" class="mode-title"></h2>
+    <div id="quiz-container"></div>
+
+    <script>
+        const rawData = `
+Which research question assesses an ad's effectiveness in influencing consumers' association? (NHUNG HOÀNG)
+A. What is the rate of change?
+B. What's the difference between Brand X and Brand Y?
+C. What is the personality of the brand?
+D. What emotions did the ad stimulate?
+C
+Which research question assesses an ad's effectiveness in persuading consumers?(NHUNG HOÀNG)
+A. How did the ad make you feel?
+B. Do you have confidence in the brand?
+C. What stood out in this ad?
+D. When you think of this brand, what qualities do you associate with it?
+B
+According to Maslow's Hierarchy of Needs, which level of needs includes self-fulfillment and enriching experiences?
+
+A. Ego needs
+B. Belongingness needs
+C. Safety needs
+D. Self-actualization needs
+D
+This includes all elements that readers see in their initial scanning. These elements-headlines, subheads, call-outs, taglines, and slogans-usually are set in larger type sizes than body copy and are designed to get attention and to stop the viewer's scanning.(NHUNG HOÀNG)
+A. Adese
+B. Display copy
+C. Body copy
+D. Headlines
+B
+The various marketing communication messages and brand experiences that create and maintain a brand are referred to collectively as ___
+
+A. brand position
+B. point of differentiation
+C. brand communication
+D. added value
+E. integrated marketing
+C
+The four tools of product, price, place, and promotion are collectively referred to as the ____(NHUNG HOÀNG)
+A. product mix
+B. promotion mix
+C. marketing mix
+D. integration elements
+E. exchange elements
+C
+Using ____, a partner company rents another company's brand name and transfers some of that brand equity to another product.(073-356-8678)
+A. co-branding
+B. equity branding
+C. brand licensing
+D. integrated branding
+E. parity branding
+C
+___ advertising focuses on establishing a corporate identity or winning the public over to the organization's point of view.
+
+A. Brand
+B. National
+C. Public service
+D. Institutional
+E. Business-to-business
+D
+____ advertising, which is the most visible type of advertising, focuses on the development of a long-term brand identity or image.
+
+A. Retail
+B. Institutional
+C. Brand
+D. Nonprofit
+E. Public service
+C
+The advertisers' desired impact on the target audience is formally stated as a(n) ___ which is the measurable goal or result that the advertising is intended to achieve.(NHUNG HOÀNG)
+A. objective
+B. promotion
+C. effect
+D. strategy
+E. image
+A
+When an advertiser hires an advertising agency, the advertiser becomes the agency's ____
+
+A. supplier
+B. client
+C. channel
+D. vendor
+E. vehicle
+B
+Which "key player" in the advertising world is composed of the channels of communication that carry the message from the advertiser to the audience and from consumers back to companies?(NHUNG HOÀNG)
+A. advertiser
+B. agency
+C. media
+D. vendor
+E. distributors
+C
+Which of the following is typically done first in the process of developing a marketing plan?(NHUNG HOÀNG)
+A. selecting marketing objectives
+B. selecting target markets
+C. developing marketing mix strategies
+D. identifying threats and opportunities
+E. designing action plans
+D
+_____is found where the product has a strong feature in an area that is important to the target and in which the competition is weaker.
+
+A. Position
+B. Competitive advantage
+C. Differentiation
+D. Segmentation
+E. Brand equity
+B
+Which component of a communication brief explains the target's motivations and the "major truths" about the target's relationship to the brand?(NHUNG HOÀNG)
+A. brand position
+B. consumer insights
+C. creative direction
+D. problem
+E. brand imperatives
+B
+______ is the research-and-analysis process used to gain knowledge and understanding of the consumer that is expressed as a key consumer insight into how people relate to a brand or product.
+
+A. Account planning
+B. Advertising planning
+C. Consumer planning
+D. Message planning
+E. Media planning
+A
+Observation, in-depth interviews, and case studies are all examples of which type of research?(NHUNG HOÀNG)
+A. secondary research
+B. quantitative research
+C. qualitative research
+D. experimental research
+E. ethnographic research
+C
+Government organizations and trade associations are both sources of ___ data.
+
+A. primary
+B. secondary
+C. ethnographic
+D. subscription
+E. unregulated
+B
+In order for survey research to accurately reflect the population, the participants must_(NHUNG HOÀNG)
+A. be likely to buy the product referred to in the survey
+B. be contacted online
+C. have a positive perception of the company conducting the survey
+D. be selected randomly from the population
+E. have unique opinions
+D
+____ is a quantitative method that uses structured interviews to ask large numbers of people the same set of questions.
+
+A. In-depth interviewing
+B. Survey research
+C. Focus group interviewing
+D. Observation research
+E. Ethnographic research
+B
+Norms come from a culture's __which represent underlying belief systems.(NHUNG HOÀNG)
+A. values
+B. legal systems
+C. social systems
+D. social classes
+E. education systems
+A
+___ means dividing the market into groups of people who have similar characteristics in certain key product-related areas.(NHUNG HOÀNG)
+A. Targeting
+B. Marketing
+C. Positioning
+D. Segmenting
+E. Profiling
+D
+Which of the following refers to an organization evaluating and choosing the best market segments with which to communicate?(NHUNG HOÀNG)
+A. targeting
+B. seeking
+C. zoning
+D. segmenting
+E. profiling
+A
+___ is the amount of money available to a household after taxes and basic necessities such as food and shelter are paid for.
+
+A. Taxable income
+B. Discretionary income
+C. Available income
+D. Net income
+E. Gross income
+B
+___ refers to the quantity of a purchase.(NHUNG HOÀNG)
+A. Adoption rate
+B. Brand relationship
+C. Diffusion
+D. Trend rate
+E. Usage rate
+E
+___ is what the advertisement says, and ___ is how it is said.
+
+A. Execution; creative strategy
+B. Message strategy; media strategy
+C. Creative strategy; execution
+D. Media strategy; message strategy
+E. Cognition; affect
+C
+Which stage of the classic creative process is characterized as an unexpected moment when the idea comes, often when the mind is relaxed and doing something else?
+
+A. ideation
+B. brainfag
+C. incubation
+D. immersion
+E. illumination
+E
+A ___ is a generic, non-original, non-novel idea.
+
+A. Big Idea
+B. cliché
+C. slogan
+D. tagline
+E. creative concept
+B
+Which of Frazier's Six Creative Strategies is most likely to force competitors into "me too" positions?(NHUNG HOÀNG)
+A resonance
+B. positioning
+C. preemptive
+D. affective
+E. brand image
+C
+A(n) ___ states the logic behind the sales offer.(NHUNG HOÀNG)
+A. attribute
+B. appeal
+C. feature
+D. point of differentiation
+E. selling premise
+E
+A short phrase that wraps up the key idea or creative concept that usually appears at the end of the body copy is known as a(n)____
+
+A. caption
+B. overline
+C. underline
+D. call-out
+E. tagline
+E
+What is the most important word selection in marketing communication?
+
+A. headline
+B. slogan
+C. brand or corporate name
+D. mission statement
+E. display copy
+C
+Public relations news and feature stories are written and distributed to external media in a ready-to-publish format called a ____
+
+A. creative brief
+B. news release
+C. script
+D. storyboard
+E. collateral material
+B
+(Kiểu hỏi khác: Public relations news and feature stories are written and distributed to external media in a ready-to-publish
+format
+A. News release
+B. Script
+C. Storyboard
+D. Press kit)
+A
+Which copy element develops the sales messages, states the argument, summarizes the proof, and provides explanation?(NHUNG HOÀNG)
+A. headline
+B. subhead
+C. caption
+D. body copy
+E. display copy
+D
+Which of the following is NOT a guideline for writing effective radio commercials?
+
+A. Keep it impersonal.
+B. Wake up the inattentive.
+C. Speak to listeners' interests.
+D. Make it memorable.
+E. Include a call to action.
+A
+Copywriters working on a radio commercial use a standard____ format to write the copy to certain time blocks, including all the words, dialogue, lyrics, sound effects, instructions, and descriptions.
+
+A. storyboard
+B. radio script
+C. transcript
+D. dialogue
+E. dual-column
+B
+Which of the following is NOT a role for which people can be cast in a television commercial?
+
+A. announcer
+B. director
+C. spokesperson
+D. character type
+E. celebrity
+B
+In a television ad, where does the action take place?(NHUNG HOÀNG)
+A. storyboard
+B. script
+C. cast
+D. set
+E. frame
+D
+Banner ads normally invite viewers to click on the banner to link to an ad or the advertiser's home page. The effectiveness of such efforts is monitored in part by the number of _____(NHUNG HOÀNG)
+A. write-ins
+B. readers
+C. visuals
+D. key words
+E. click-throughs
+E
+A________ of an ad translates the foreign language copy into the original domestic language to check the accuracy of the message.(073-356-8678)
+A. high-context translation
+B. low-context translation
+C. global translation
+D. bilingual translation
+E. back translation
+E
+Copywriters and art directors who imagine what the finished ad might look like are engaged in _
+
+A. visualization
+B. positioning
+C. post production
+D. stop action
+A
+A set of computer-generated letters that appear to be moving across the bottom of the television screen ___
+
+A. Crawl
+B. Morph
+C. Tip-in
+D. Register
+A
+Printers create the illusion of shades of color by using dots of color surrounded by ___(NHUNG HOÀNG)
+A. tint blocks
+B. tint screens
+C. white space
+D. offset prints
+C
+A print advertisement for Hyatt is dominated by the image of a woman sitting on a pristine beach, gazing out at a calm ocean. Text below the image reads "Hyatt. You're more than welcome." The ad also includes a Hyatt website address. Which type of layout does this ad use?
+
+A. picture window
+B. circus
+C. panel
+D. nonlinear
+A
+The final version of a television commercial with the sound and film mixed together is called a(n)____
+
+A. interlock
+B. answer print
+C. release print
+D. dubbed print
+B
+This refers to the repetition of message exposure.
+
+A. Brand development index (BDI)
+B. Category development index (CDI)
+C. Gross rating points (GRP)
+D. Frequency
+D
+This estimates the strength of their brand in the various geographical areas.(NHUNG HOÀNG)
+A. Brand development index (BDI)
+B. Category development index (CDI)
+C. Designated marketing area (DMA) |
+D. Targeted cost per thousand (TCPM)
+A
+Which strategy directs marketing efforts at resellers, where success depends on the ability of these intermediaries to market the product, which they often do with advertising?
+
+A. Pull strategy
+B. Pulsing strategy
+C. Push strategy
+D. Direct response
+C
+In which strategy the decisions media planners make to deliver the most effective media mix that will reach the target audience and satisfy the media objectives?
+
+A. Pull strategy
+B. Pulsing strategy
+C. Push strategy
+D. Media strategy
+D
+Recall tests and recognition tests are two types of______ tests
+
+A. inquiry
+B. persuasion
+C. semiotics
+D. memory
+D
+A brand linkage test is another name for a(n) _ test.(NHUNG HOÀNG)
+A. recall
+B. inquiry
+C. semiotics
+D. likability
+A
+Which of the following is FALSE when identifying and describing the processes and tools of strategic marketing?(NHUNG HOÀNG)
+A. Most brand communication campaigns have more than one objective
+B. Determining advertising's impact on sales is typically a straightforward process
+C. Brand communication is considered successful when set objectives-attitudinal, behavioral, or both-have been met
+D. A thorough evaluation of an advertising campaign includes both quantitative and qualitative research.
+B
+At the most basic level of evaluation of the effectiveness of a sales promotion, managers require proof of ___(NHUNG HOÀNG)
+A. brand recognition
+B. brand recall
+C. promotion execution
+D. trial rates
+D
+Which of the following is NOT an approach to segmenting consumer markets?(NHUNG HOÀNG)
+A. demographic segmentation
+B. geographic segmentation
+C. psychographic segmentation
+D. behavioral segmentation
+E. brand segmentation
+E
+Which approach to segmentation divides people into groups based on product category and brand usage?
+
+A. demographic segmentation
+B. geographic segmentation
+C. psychographic segmentation
+D. benefit segmentation
+E. behavioral segmentation
+E
+___ uncovers critical information that becomes the basis for strategic planning decisions for both marketing and marketing communication.
+
+A. Segmentation research
+B. Market research
+C. Consumer research
+D. Strategic research
+E. Copy research
+D
+What are the two primary characteristics of quantitative research?
+
+A. large sample sizes and quota sampling
+B. small sample sizes and rich data
+C. primary and secondary data
+D. small sample sizes and consumer insights
+E. large sample sizes and random sampling
+E
+A ____ is a creative concept that becomes a point of focus for communicating the message strategy.
+A. Big Idea
+B. cliché
+C. slogan
+D. tagline
+E. creative leap
+A
+Being the first brand in a product category often leads to a brand establishing a ___position.
+
+A. usage
+B. preemptive
+C. benefit
+D. psychological
+E. value
+B
+Which is shorthand for the cost of getting 1,000 impressions?
+
+A. CPP
+B. CPM
+C. TCP
+D. CPA
+B
+What term refers to the postproduction process of assembling the various pieces of the film into the same sequence as the storyboard?
+
+A. dubbing
+B. release printing
+C. refocusing
+D. video editing
+D
+After the headline, which copy element has the second-highest readership?(NHUNG HOÀNG)
+A. overlines
+B. underlines
+C. call-outs
+D. captions
+E. taglines
+D
+When an ad amplifies the emotional impact of a message by engaging a consumer in a personal connection with a brand, the ad most likely ____
+
+A. informs
+B. teaches
+C. compares one brand to another brand
+D. creates believability
+E. resonates
+E
+Of the following, which would be the biggest number for a magazine?
+
+A. total audience
+B. guaranteed circulation
+C. coverage
+D. ratings
+A
+Which component of a communication brief states the single-minded thought that the communication will bring to life in a provocative way?
+
+A. communication objective
+B. consumer insight
+C. creative direction
+D. brand imperative
+E. proposition or selling idea
+D
+Messages that_____ are designed to primarily affect attitudes and create beliefs.(NHUNG HOÀNG)
+A. inform
+B. teach
+C. create brand association
+D. persuade
+E. drive action
+D
+Full-color images are reproduced using four distinctive shades of ink called __
+A. process colors
+B. primary colors
+C. basic colors
+D. halftones
+A
+To determine which geographical areas have the highest (and lowest) rate of consumption for a particular product category, marketers compute a this for each market in which they are interested.
+
+A. Brand development index (BDI)
+B. Category development index (CDI)
+C. Designated marketing area (DMA)
+D. Targeted cost per thousand (TCPM)
+B
+The materials and ingredients used in producing the product are obtained from other companies that are referred to as the producer's ____(073-356-8678)
+A. marketers
+B. suppliers or vendors
+C. distributors or retailers
+D. agencies
+E. exchangers
+B
+A type of memory test in which respondents are asked to report what they remember from the ad about the brand is known as a(n) __ test.
+
+A. recall
+B. recognition
+C. semiotics
+D. likability
+A
+A __ is a form of compensation that involves the agency billing the client each month based on the projected amount of work and the hourly rate charged for that work.(NHUNG HOÀNG)
+A. set fee system
+B. value bill
+C. commission
+D. retainer
+E. performance incentive
+D
+____ means that you can run the same test again and get the same answer.(NHUNG HOÀNG)
+A. Semiotics
+B. Reliability
+C. Validity
+D. Criteria
+E. Quality
+B
+___ are simply rules learned through social interaction that specify or prohibit certain behaviors.(NHUNG HOÀNG)
+A. Norms
+B. References
+C. Values
+D. Attitudes
+E. Motivations
+A
+Which dimension of effective advertising represents the "art" part?
+
+A. Strategic dimension
+B. Personal dimension
+C. Creative dimension
+D. Media dimension
+C
+Which dimension of effective advertising represents the "science" part?
+
+A. Strategic dimension
+B. Personal dimension
+C. Creative dimension
+D. Media dimension
+A
+Which of the following is LEAST likely included in a communication brief?(NHUNG HOÀNG)
+A. proposition or selling idea
+B. problem
+C. target audience
+D. brand imperatives
+E. sales force objectives
+E
+The basic driving forces that motivate us to do something are called ___
+A. Wants
+B. Desires
+C. Values
+D. Needs
+D
+____ includes the elements in a print ad that are designed to be read and absorbed.(NHUNG HOÀNG)
+A. Body copy
+B. Display copy
+C. Adese
+D. Brag-and-boast copy
+E. News copy
+A
+______ includes the elements in a print ad that are designed to be read and absorbed, such as the text of the ad message and captions.
+
+A. body copy
+B. display copy
+C. adese
+D. brag-and-broast copy
+E. visuals
+A
+(KIểu hỏi khác: This includes the elements that are designed to be read and absorbed, such as the text of the ad message and captions.
+A. Adese
+B. Display copy
+C. Body copy
+D. Headlines)
+A
+method of comparing alternative media vehicles on the basis of what it costs to deliver 1,000 readers viewers, or listeners; the cost of an advertising unit (30-second TV or radio spot, for example) per 1,000 impressions. What is this?(NHUNG HOÀNG)
+A. CPP
+B. CPM
+C. TCPM
+D. CPA
+A
+Which of the following is a behavioral influence on consumer decision making?
+
+A. culture
+B. reference groups
+C. personality
+D. psychographics
+E. innovation
+E
+Quick, miniature, preliminary sketches are known as _(NHUNG HOÀNG)
+A. rough layouts
+B. semicomps
+C. storyboards
+D. thumbnail sketches
+E. mechanicals
+D
+___ is your view of the relationship between what you gain by trying something new and what you have to lose if it doesn't work out.
+
+A. Adoption
+B. Adaptation
+C. Perceived risk
+D. Selective exposure
+E. Selective distortion
+C
+What is the most common form of online advertising?
+
+A. superstitials
+B. pop-ups
+C. mobile ads
+D. testimonials
+E. banners
+E
+Commercials in song are known as___(NHUNG HOÀNG)
+A. jingles
+B. musicals
+C. lyricals
+D. sound effects
+E. voice-overs
+A
+A(n),_________is used when an announcer who is not visible describes some kind of action taking place on the screen.
+
+A. voice-over
+B. remote voice
+C. off-location
+D. ghost-voice
+E. monologue
+A
+Which of the following is NOT a rational customer-focused selling premise?(NHUNG HOÀNG)
+A. benefit
+B. promise
+C. reason why
+D. unique selling proposition (USP)
+E. resonance
+E
+Images from collections of copyright-free art that anyone who buys the service can use are known as___
+
+A. die-cut images
+B. process images
+C. public art
+D. clip art
+D
+A(n)__ brand is available in a number of different countries in various parts of the world.(NHUNG HOÀNG)
+A. parity
+B. local
+C. regional
+D. extension
+E. international
+E
+The visual that sticks in the mind and becomes the image that viewers remember when they think about the commercial is known as the________
+
+A. brand personality
+B. key frame
+C. tagline
+D. elemental visual
+E. scripted visual
+B
+Communication with employees and shareholders about brands and campaigns is usually handled by__
+
+A. sales promotion
+B. direct-response
+C. word-of-mouth
+D. specialties
+E. public relations
+E
+Which of the following are considered "key players" in the marketing Industry?
+
+A. marketers
+B. suppliers or vendors
+C. distributors or retailers
+D. agencies
+E. all of the others
+E
+_____ refers to the use of a brand name of a component in another product's advertising and promotion.(NHUNG HOÀNG)
+A. Co-branding
+B. Ingredient branding
+C. Inside branding
+D. Brand licensing
+E. Integrated branding
+B
+Paid persuasive communication that uses mass and interactive media to reach broad audiences to connect an identified sponsor with a target audience is known as _(NHUNG HOÀNG)
+A. advertising
+B. personal selling
+C. public relations
+D. sponsorship
+E. sales promotion
+A
+Brand advertising is also known as ___ advertising.
+
+A. trade
+B. local
+C. consumer
+D. corporate
+E. public service
+C
+Which of the following types of agencies would most likely be able to purchase media at a low cost because they can group several clients' purchases together?(NHUNG HOÀNG)
+A. creative boutiques
+B. media-buying services
+C. in-house agencies
+D. traffic departments
+E. full-service agencies
+B
+Using value billing, an advertising agency is paid for its___
+
+A. creative and strategic ideas
+B. media placements
+C. market research
+D. advertising executions
+E. share in the profits from a successful campaign
+A
+For most organizations, strategic planning starts with _
+
+A. formulating a business mission statement
+B. identifying the target market
+C. determining the required return-on-investment
+D. conducting an internal and external environment analysis
+E. creating the marketing mix
+A
+The outcome of strategic research usually reaches agency creative departments in the form of a strategy document called a___(073-356-8678)
+A. communication brief
+B. situation analysis
+C. business plan
+D. marketing plan
+E. competitive brief
+A
+In an advertising agency, who is responsible for researching a brand and its customer relationships in order to devise advertising message strategies that are effective in addressing consumer needs and wants?
+
+A. account manager
+B. account planner
+C. media director
+D. creative director
+E. research director
+B
+Which of the following is NOT a type of research used in planning advertising and marketing communication?(NHUNG HOÀNG)
+A. market research
+B. consumer research
+C. brand communication research
+D. strategic research
+E. segmentation research
+E
+Which of the following statements is FALSE regarding secondary research?(NHUNG HOÀNG)
+A. It is called secondary because it is information that has been collected and published by someone else.
+B. Much of the secondary research used by advertisers comes from government census records on the population's size, geographic distribution, age, income, occupation, education, and ethnicity.
+C. Secondary research found on the Internet is not valid.
+D. Trade associations can be a reliable source for secondary research.
+E. Secondary research suppliers gather and organize information around specific topic areas for other interested parties.
+C
+Which of the following practices involves aggregating the wisdom of Internet users in a type of digital brainstorming?(NHUNG HOÀNG)
+A. focus group interviewing
+B. ethnographic observing
+C. crowdsourcing
+D. expert panel interviewing
+E. consumer research panel interviewing
+C
+A___ consists of all those who occupy a dwelling, whether or not they are related.(NHUNG HOÀNG)
+A. subculture
+B. family
+C. household
+D. reference group
+E. normative group
+C
+Which strategy do planners employ to treat the market as homogeneous, using general appeals for all consumers?
+
+A. multi-segment strategy
+B. undifferentiated strategy
+C. behavioral targeting strategy
+D. microtargeting strategy
+E. niche strategy
+B
+____ are the statistical, social, and economic characteristics used to describe a population, including age, gender and sexual orientation, education, income, occupation, race, and family status.
+
+A. Psychographics
+B. Lifestyles
+C. Geographics
+D. Demographics
+E. Ethnographics
+D
+The term_____ refers to lifestyle and psychological characteristics, such as activities, values, attitudes, interests, and opinions.(NHUNG HOÀNG)
+A. psychology
+B. psychographics
+C. attitude
+D. motivation
+E. personality
+B
+Which of the following is the first step in the classic creative process?
+
+A. Ideation
+B. Brainfag
+C. Incubation
+D. Immersion
+A
+In which stage of the classic creative process does the problem solver try to put his or her conscious mind to rest to let the subconscious take over?
+
+A. ideation
+B. brainfag
+C. incubation
+D. immersion
+E. illumination
+C
+Which type of advertising message tells a story about the products, using characters who speak to each other rather than the audience?
+
+A. Lecture
+B. Teaser
+C. Demonstration
+D. Drama
+D
+In Taylor's Six-Segment Strategy Wheel,______ strategies are based on logic.(NHUNG HOÀNG)
+A. ration
+B. acute need
+C. routine
+D. social
+E. ego
+A
+In which print medium can ads be more informative and carry longer copy?(NHUNG HOÀNG)
+A. newspapers
+B. magazines
+C. directories
+D. posters
+E. outdoor advertising
+B
+Which of the following media rely most heavily on visuals?
+
+A. direct-response messages
+B. newsletters
+C. newspapers
+D. directories
+E. outdoor boards
+E
+A(n).______ is the visual plan or layout of the commercial that shows the number of scenes, the composition of the shots, and the progression of the action.(NHUNG HOÀNG)
+A. key frame
+B. script
+C. storyboard
+D. storyline
+E. action plan
+C
+In most marketing communication, the power to get attention lies primarily with the ___(NHUNG HOÀNG)
+A. visual
+B. audio
+C. script
+D. sound effects
+A
+The__ of type refers to how easy it is to perceive the letters.
+A. legibility
+B. point
+C. font
+D. column width
+A
+A second color used in addition to black-and-white is known as___
+
+A. mono color
+B. single color
+C. spot color
+D. limited color
+C
+Mmmints, the maker of a line of breath mints, is launching a new flavor. The company's agency has created an advertisement that includes a flavor strip, which will allow consumers to experience the taste of the new product. This advertisement is an example of an(n)___
+
+A. tip-in
+B. embossing
+C. stamping
+D. debossing
+A
+Rahim is an art director developing an advertising campaign for a new online multiplayer game. The advertisement will feature actual actors moving through the animated universe alongside avatars from the game. During which part of production will the actors be inserted into the digital universe?(NHUNG HOÀNG)
+A. postproduction
+B. the shoot
+C. production
+D. preproduction
+A
+Which indicates the weight, or efficiency, of a media plan? The more this in a plan, the more "weight" the media buy is said to deliver.
+
+A. Brand development index (BDI)
+B. Category development index (CDI)
+C. Gross rating points (GRP)
+D. Targeted cost per thousand (TCPM)
+C
+Which means an advertising scheduling pattern in which time and space are scheduled on a continuous but uneven basis; lower levels are followed by bursts or peak periods of intensified activity?
+
+A. Pull strategy
+B. Pulsing strategy
+C. Push strategy
+D. Direct response
+B
+One way to measure memory is to show an advertisement to people and ask them whether they remember having seen it before. This is known as a(n) __test. (NHUNG HOÀNG)
+A. aided recall
+B. recognition
+C. semiotics
+D. likability
+B
+Of the following, ROI is easiest to calculate for__
+
+A. public relations
+B. advertising
+C. social marketing
+D. direct marketing
+D
+The problem with evaluating campaigns, particularly IMC campaigns, is estimating the impact of _____ since it's difficult to prove that multichannel communication with messages that reinforce and build on one another has more impact than single messages from a single source.(NHUNG HOÀNG)
+A. efficiency
+B. conversion
+C. synergy
+D. advocacy
+C
+The goal of marketing is achieved by matching a product's availability to the___
+
+A. competition's availability
+B. previous year's level of sales
+C. company's production capabilities
+D. consumers' need, desire, or demand for the product
+E. legal limits of availability
+D
+A ______brand is one that is marketed in a single country.
+
+A. house
+B. local
+C. regional
+D. store
+E. private
+B
+(Kiểu hỏi khác: A ....brand is marketed in a single country
+A. global
+B. international
+C. regional
+D. local)
+D
+An advertising____ is a set of related ads that are variations on a theme.
+
+A. brand
+B. market
+C. campaign
+D. position
+E. target
+C
+Which of the following is the idea that messages should be directed at particular groups of prospective buyers?(NHUNG HOÀNG)
+A. positioning
+B. targeting
+C. branding
+D. integrated marketing
+E. social responsibility
+B
+In an advertising agency, who is usually responsible for gathering available intelligence on the market and consumers and for acting as the voice of the consumer?
+
+A. account executive
+B. account planning group
+C. traffic department
+D. copywriter
+E. human resources department
+B
+Who in an advertising agency is most accurately described as "speaking for the consumer" or "speaking with the voice of the consumer"?
+
+A. account manager
+B. account planner
+C. media director
+D. creative director
+E. research director
+B
+____ research delivers numerical data such as number of users and purchases, their attitudes and knowledge, their exposure to ads, and other market-related information.
+
+A. Ethnographic
+B. Quantitative
+C. Qualitative
+D. Neural
+E. Experimental
+B
+___focuses on message development research, media planning research, and evaluation, as well as information about competitors' advertising(NHUNG HOÀNG)
+A. Brand communication research
+B. Market research
+C. Consumer research
+D. Strategic research
+E. Copy research
+A
+An in-depth interview asks questions that are___
+
+A. broad and open-ended
+B. multiple choice
+C. closed-ended
+D. highly structured and inflexible
+E. easily generalized
+A
+Which projective technique attempts to gain insight into how people perceive brands by examining the link between concepts?
+
+A. meaning creation
+B. metaphors
+C. purpose-driven games
+D. panel groups
+E. focus interviewing
+B
+Which of the following is for many people the most important reference group because of its formative role and the intensity of its relationships?
+
+A. Neighbors
+B. Teachers
+C. Family
+D. Employers
+C
+Which of the following is a social influence on consumer decision making?(NHUNG HOÀNG)
+A. state of mind
+B. innovation
+C. satisfaction
+D. family
+D
+International, national, state, city, climate, and urban/rural are all ways to segment a market by___
+
+A. demographics
+B. geographics
+C. psychographics
+D. behavioral characteristics
+E. benefits sought
+B
+The___ process refers to the speed with which people are willing to try a new product.
+
+A. need recognition
+B. adoption
+C. risk
+D. trial
+E. usage
+B
+The phenomenon of trends and fads is most closely related to which of the following?(NHUNG HOÀNG)
+A. psychographic factors
+B. geographic factors
+C. cross-cultural factors
+D. gender
+E. corporate culture
+A
+In an advertising agency, who manages the creative process?
+
+A. the account planner
+B. the copywriter
+C. the creative director
+D. the client
+E. the art director
+C
+Getting attention reflects the____ power of an advertisement; creating interest reflects the_____ power of an ad.
+
+A. stopping; sticking
+B. pulling; stopping
+C. stopping; pulling
+D. pulling; sticking
+E. sticking; pulling
+C
+What are the two primary toolkits available to television copywriters?
+
+A. voice-over and on-camera
+B. voice and sound effects
+C. visual and audio
+D. on- and off-location
+E. script and storyboard
+C
+A(n)_____ is the imprint used for immediate identification of a brand or company(NHUNG HOÀNG)
+A. icon
+B. logo
+C. brand image
+D. thumbnail
+B
+In an outdoor board, typography should be ___
+
+A. spot color
+B. four color
+C. all-capital letters
+D. uncluttered
+D
+As you're flipping through the newspaper, your eye catches a bright blue graphic in an ad for a new restaurant.
+This ad uses___ to attract attention.
+
+A. off-set printing
+B. spot color
+C. color separation
+D. four-color printing
+B
+A print advertisement for a movie features the title of the movie, the names of the actors appearing in the movie, and boldfaced, all caps quote from respected movie critics praising the film. The ad uses only black, white, and red ink. Which type of layout does this ad use?
+
+A. picture window
+B. circus
+C. panel
+D. dominant type
+D
+Studies that periodically collect information from random samples of consumers in markets where they were exposed to a campaign are called___(NHUNG HOÀNG)
+A. semiotic tests
+B. concept tests
+C. tracking studies
+D. test market studies
+C
+Another way to look at advertising ROI is the ___
+
+A. cost-to-sales ratio
+B. reach-to-frequency ratio
+C. GRP ratio
+D. CPM ratio
+A
+The marketing communication tool of____ is attractive because the measurement for response is always built in.
+A. public relations
+B. buzz marketing
+C. retail advertising
+D. direct-marketing
+D
+One of the data collection technique of qualitative research design is...
+
+A. in-depth interviews
+B. interview
+C. survey
+D. survey Research
+A
+Which of the following is the last step in the classic creative process?
+
+A. Ideation
+B. Evaluation
+C. Incubation
+D. Immersion
+B
+Of the following, which is the best initial focus when setting objectives for a media plan?(NHUNG HOÀNG)
+A. Continuity
+B. Lead time
+C. Distribution
+D. Reach
+D
+This segmentation is primarily based on studies of how people spend their money, their patterns of work and leisure, their interest and opinions, and their views of themselves.
+
+A. Demographic Segmentation
+B. Psychographic Segmentation
+C. Life-Stage Segmentation
+D. Behavioral Segmentation
+B
+Which of the following literary techniques used to enhance the memorability of slogans refers to the repetition of the structure of a sentence or phrase?
+
+A. Direct address
+B. Parallel construction
+C. Startling phrase
+D. Rhyme, rhythm, alliteration
+B
+Which of the following literary techniques used to enhance the memorability of slogans refers to the repetition of specific sounds?
+
+A. Parallel construction
+B. Startling phrase
+C. Rhyme, rhythm, alliteration
+D. Cue the product
+C
+A researcher asks a consumer who watched a particular television program whether she remembers any commercials for a certain type of product, without using a brand name. What type of question is this?
+
+A. unaided recall
+B. aided recall
+C. recognition
+D. prompted recall
+E. open-ended
+A
+A researcher asks a consumer who watched a particular television program whether she remembers any commercials for a certain brand-name product. What type of question is this?(NHUNG HOÀNG)
+A. unaided recall
+B. aided recall
+C. recognition
+D. unprompted recall
+E. open-ended
+B
+..... use marketing communication to affect the customer's judgment of value. For example, ads showing prestige pricing in which a high price seems to make the product worthy or valuable may be illustrated by photographs of the "exceptional product" in luxury settings or by ad copy explaining the reasons for a high price.
+
+A. Psychological pricing strategies
+B. Promotional pricing
+C. Pricing
+D. Cost plus pricing
+A
+....assembles information to plan the use of a variety of marketing communication tools.(NHUNG HOÀNG)
+A. Advertsing research
+B. Integrated marketing communications
+C. Brand communication research
+D. Market research
+B
+This assembles information to plan the use of a variety of marketing communication tools.(NHUNG HOÀNG)
+A. Market research
+B. Consumer research
+C. Brand communication research
+D. IMC research
+D
+...are more flexible and unstructured(NHUNG HOÀNG)
+A. in-depth interviews
+B. interview
+C. survey
+D. survey Research
+A
+Indicate the weight, or efficiency, of a media plan. The more this in a plan, the more "weight" the media buy is said to deliver.
+
+A. Brand development index (BDI)
+B. Category development index (CDI)
+C. Gross rating points (GRP)
+D. Targeted cost per thousand (TCPM)
+C
+This is a key element in print pieces. It conveys the main message so that people get the point of the message. It works with the visual to get attention and communicate the creative concept. This clutter-busting big idea breaks through the competitive messages. It comes across best through a picture and words working together.
+
+A. Display copy
+B. Body copy
+C. Headline
+D. Tagline
+C
+Which two methods do media planners use to estimate the frequency of a schedule?
+
+A. weighted frequency and weighted reach
+B. average frequency and gross frequency
+C. average frequency and frequency distribution
+D. gross frequency and frequency distribution
+B
+A... brand is one marketed throughout a global region
+A. global
+B. international
+C. regional
+D. local
+A
+... focuses attention to product differences that distinguish the company's product from other consumers
+
+A. Product differentiation
+B. Pricing
+C. Product positioning
+D. Product
+A
+According to creative professionals, which type of audience member responds best to humor in advertising copy?
+
+A. Younger male
+B. Younger female
+C. Middle-aged male
+D. Middle-aged female
+A
+Groups of people with a common interest who have a stake in a company and who can have an impact on its success.
+
+A. Planner
+B. Creditor
+C. Marketer
+D. Stakeholder
+D
+This kind of segmentation divides the market using such characteristics as gender, ethnicity, and income. Age is often the first characteristic to be used in defining a market segment.
+
+A. Demographic Segmentation
+B. Psychographic Segmentation
+C. Life-Stage Segmentation
+D. Behavioral Segmentation
+A
+Occasionally, you will see layouts that emphasize the type rather than the art, or even an all-copy advertisement in which the headline is treated as type art, such as the ACG ad.(073-356-8678)
+A. Panel or Grid
+B. Picture Window
+C. All Art
+D. Dominant Type or All Copy
+D
+Which test can be used in postesting research?
+
+A. Concept Testing
+B. Engagement Tests
+C. Moment-by-moment tests
+D. The coincidental survey technique
+D
+Which of the following is NOT a research question assessing an ad's effectiveness in influencing consumers' cognition?
+
+A. What did you like or dislike in the ad?
+B. Did the ad engage your interest or curiosity?
+C. Did you read/watch most of it? How much?
+D. Do you have a need for this brand or can it fulfill a need for you?
+A
+Photographs are considered which type of printed image?
+
+A. Formal
+B. Halftone
+C. Tint block
+D. Line art
+B
+A plan that imposes order and at the same time creates an arrangement that is aesthetically pleasing
+
+A. Typography
+B. Layout
+C. Typeface
+D. Font
+B
+A ..... brand is available virtually everywhere in the world
+A. global
+B. international
+C. regional
+D. local
+A
+Which of the following objectives is most closely related to the See/hear facet of the Facets Model of Effects?
+
+A. Change attitudes
+B. Create conviction
+C. Get attention
+D. Stimulate trial
+C
+In this type of copy, people copy written from the company's point of view with a pompous tone.
+
+A. Display copy
+B. Body copy
+C. Your-name-here
+D. Brag-and-boast copy
+D
+What roles does advertising play?
+
+A. Marketing and communication roles
+B. Economic and societal roles
+C. None of them is correct
+D. Marketing, communication, economic and societal roles
+D
+In ....., a quantitative method using structured interviews to ask a large number of people the same question
+
+A. Survey research
+B. Quantitative research
+C. Qualitative research
+D. Secondary research
+A
+.... is a term to refer to what are the important features and competitive advantage? What's position, essence, personality and/or image?
+
+A. Brand personality
+B. Target audience
+C. Consumer insights
+D. Brand imperatives
+D
+A blend of four main activities: designing, pricing, distributing, and communicating about the product.(NHUNG HOÀNG)
+A. Account Planning
+B. Marketing
+C. Marketing Mix
+D. Advertising
+C
+A creative brief is also known as which of the following?
+
+A. Perceptual map
+B. Unique selling proposition
+C. Big Idea
+D. Creative blueprint
+D
+Feel emotion based on Facets Model of Effects(NHUNG HOÀNG)
+A. Create attention, awareness, interest, recognition.
+B. Touch emotions and create feelings
+C. Deliver information, aid understanding, create recall
+D. Establish brand identity and associations, transform a product into a brand with distinctive image.
+D
+In marketing mix, "psychological pricing, sales, price, value..." are elements of(NHUNG HOÀNG)
+A. Product strategy
+B. Price strategy
+C. Place strategy
+D. Promotion strategy
+B
+Stimulate trial, purchase, repurchase, or some other form of action, such as visiting a store or website
+
+A. Feel emotions
+B. Think/Understand effect
+C. Act/ Do
+D. Believe
+C
+...... illustrate(s) the positions occupied by competitors relative to factors important to customer
+
+A. Perceptual maps
+B. Location map
+C. Brand Positioning
+D. Differentiation
+A
+Tries to stimulate an immediate customer response is..... of the common types of advertising
+
+A. Direct-response advertising
+B. Retail or local advertising
+C. Nonprofit advertising
+A
+Which of the following statements about advertising art is FALSE?
+
+A. Most people feel that photographs are deceptive because they are easily altered with computer technology.
+B. A photograph is more realistic, and an illustration is more fanciful.
+C. Illustrations eliminate many of the details you see in a photograph.
+D. Illustrations can focus attention on key details of the image.
+A
+A....... describes where the business is headed-it is usually an inspiring statement that p.. organization's ideal future
+A. vision statement
+B. goal statement
+C. mission statement
+D. position statement
+A
+Use large sample sizes (100-1,000) and random sampling to conduct surveys and studies that track, count or measure things like sales and opinionsm that is
+
+A. Quantitative research
+B. Qualitative research
+C. Secondary research
+D. Market research
+A
+Way to express a strategic approach for "soft sell", this strategy is
+
+A. uses an informational message that touches the mind and creates a response
+B. uses emotional appeals or images to create a response based on attitudes, moods, and
+C. uses more rational, cognitive (thinking) objectives
+D. uses more emotional, affective (feeling) objectives
+B
+A benefit statement that is both unique to the product and important to the user. The USP is consumers will get this unique benefit by using this product only. For example, an ad for a ca This camera is the only one that lets you zoom in and out automatically to follow the action. describes for which type of rational customer-focused selling premises?
+A. A benefit type
+B. A promise type
+C. A reason why type
+D. A unique selling proposition type
+D
+In an advertisement, the visual's primary function is to ........
+
+A. create an emotional response
+B. convey a brand personality
+C. provide a brand reminder
+D. get attention
+D
+........ identifies key selling points for the product
+
+A. Brand advertising
+B. Brand position
+C. Branding
+D. Brand promise
+B
+In marketing mix, "design and development, performance, branding, packaging" are key element of
+
+A. Product strategy
+B. Price strategy
+C. Place strategy
+D. Promotion strategy
+A
+"... is actions that make the plan come to life"
+
+A. Strategy
+B. Objective
+C. Tactic
+D. Problem
+C
+What is/are stage(s) of strategic planning?
+
+A. Identifying a problem that can be solved with communication
+B. Determining objectives (Goal) and implementing tactics (Execution)
+C. Deciding on strategies (How to complete objective)
+D. All of other are correct
+D
+.. aims to deliver reminders about familiar brands and build trust.
+
+A. Brand relationship communication
+B. Relationship-building communication
+C. Promotion
+D. Brand promise
+A
+Which of the following is a psychological influence on consumer decision-making?
+
+A. motivations
+B. innovations
+C. family
+D. culture
+A
+What do tracking studies show?
+
+A. Performance of a marketer's brand over time
+B. The break-even point for a campaign
+C. Return on investment for the campaign
+D. Past performance of a brand
+A
+Which types of research can be used in evaluation?
+
+A. Developmental research and Diagnostic research
+B. Concurrent research and Post-testing research
+C. Developmental research, Diagnostic research, Concurrent research and Post-testing research
+D. None of other is correct
+C
+Uses a common attribute or benefit, but brand gets there first-forces competition into "me too" positions
+
+A. Preemptive
+B. Unique selling proposition
+C. Brand image
+D. Positioning
+A
+Which of the following refers to intuitive, holistic, artistic, and emotionally expressive thinking?
+
+A. Lateral-brain thinking
+B. Back-brain thinking
+C. Top-brain thinking
+D. Right-brain thinking
+D
+.... is how to accomplish the objectives.
+
+A. Strategy
+B. Objective
+C. Tactics
+D. Problem
+C
+A group of people an individual uses as a model for behavior in specific situations
+
+A. Reference group
+B. Subgroup
+C. Normal group
+D. Subcultures
+A
+The pompous overblown phrasing of many corporate statements doesn't work-it doesn't get attention; it's not memorable; it doesn't get read.
+
+A. Taglines
+B. Display copy
+C. Body copy
+D. Your-name-here
+D
+What are the roles of advertising play?
+
+A. Marketing and communication roles
+B. Media and advertising
+C. Selling
+D. Promotion
+A
+Which of the following is a written document that summarizes the objectives and strategies that guide how media dollars will be spent?
+
+A. Market plan
+B. Advertising plan
+C. Media plan
+D. Message plan
+C
+The first step in developing an advertising plan, just as in a marketing plan, is not planning but backgrounding-researching and reviewing the current state of the business that is relevant to the brand and gathering all pertinent information. After the research is compiled, planners try to make sense of the findings
+
+A. SWOT analysis
+B. Situation analysis
+C. Competition analysis
+D. Market analysis
+B
+Uses a claim of superiority or distinction based on extrinsic factors such as psychological differences in the minds of consumers
+
+A. Preemptive
+B. Unique selling proposition
+C. Brand image
+D. Positioning
+C
+Which of the following is NOT a common type of ad layout?
+
+A. circus
+B. dominant type
+C. nonlinear
+D. jumbled
+D
+Which sentence is NOT described as "primary resourse"?
+
+A. This kind of research has been collected and published by someone else.
+B. Specialize in interviewing, observing, recording, and analyzing the behavior of those who purchase or influence the purchase of a particular good or service
+C. Companies and their agencies do their own tracking and monitoring of their customers' behavior
+D. Normally it is conducted in large scale
+A
+.... is information collected for the first time from original sources, such as primary research suppliers.(NHUNG HOÀNG)
+A. Primary research
+B. Descriptive research
+C. Causal research
+D. Secondary research
+A
+Which media scheduling decision relates to factors such as seasonality, holidays, and days of the week?(NHUNG HOÀNG)
+A. Duration
+B. Continuity
+C. Timing
+D. Carryover
+C
+Advertising works to create demand for brands and lower prices for consumers is the ..... of advertising play
+
+A. Marketing and communication roles
+B. Economic and societal roles
+C. Persuasion role
+D. Information role
+B
+This contemporary style of layout can be read starting at any point in the image. In other words, the direction of viewing is not ordered.
+
+A. Panel or Grid
+B. Picture Window
+C. Circus
+D. Nonlinear
+D
+A strategy that directs marketing efforts at resellers, where success depends on the ability of these intermediaries to market the product, which they often do with advertising.(NHUNG HOÀNG)
+A. Pull strategy
+B. Pulsing strategy
+C. Push strategy
+D. Direct response
+C
+In print, designers also use this, in which a second color in addition to black (a blackand-white photo or stration with an accent color) is used to highlight important elements. The use of this is highly attention getting, particularly in newspaper ads(NHUNG HOÀNG)
+A. Color
+B. Spot color
+C. Animation
+D. Film shots
+B
+Which of the following could be a research question assessing an ad's effectiveness in enhancing consumers' perceptions of the brand?
+
+A. What brand do you prefer?
+B. Do you want to try or buy this product/brand?
+C. Have you seen this advertisement?
+D. What emotions did the ad stimulate?
+C
+..... analysis is the process of finding ways to address a brand's weaknesses and threats and leverage its strengths and opportunities
+
+A. SWOT
+B. BCG
+C. Target Markets
+D. Marketing plan
+A
+A video technique in which one object gradually changes into another is called..............
+
+A. Crawling
+B. Image transfer
+C. Morphing
+D. Interlocking
+C
+Which is NOT source of secondary research?
+
+A. Reports from a marketing research agency
+B. Data supplied by a government
+C. The national consensus
+D. Direct interview with a group of customers
+D
+... are built through message strategies and brought to life through advertising executions
+
+A. Brand positions and brand images
+B. Advertising
+C. Marketing
+D. Integrated marketing communications
+A
+What are the key components of advertising?
+
+A. Strategy, message, media, evaluation
+B. Identification, Information, Persuasion
+C. Marketing mix, marcom, branding
+D. None of them is correct
+A
+Which of the following is NOT a step in the consumer decision process?
+
+A. need recognition
+B. cognitive dissonance
+C. information search
+D. postpurchase evaluation
+B
+Which type of design uses flowing, curved lines reminiscent of vines and flowers?
+
+A. Art nouveau
+B. Pop art
+C. Grunge
+D. Art deco
+A
+Which sentence is wrong about " a marketing plan"?
+
+A. Developed for a brand or product line and evaluated annually.
+B. Create for marketing function of the business
+C. Involves a SWOT analysis to determine strengths, weaknesses, opportunities, and threats on product level
+D. May cover an SBU (strategic business unit)
+D
+An advertisement for an exercise bike states, "Get fit as a fiddle fast!" Which of the following literary techniques is used in this advertisement?
+
+A. A startling phrase
+B. Alliteration
+C. Combination
+D. Parallel construction
+B
+Which of the following is used to make a campaign as strong as possible before it "goes live" in the market place?
+
+A. Concept testing
+B. Scanner analysis
+C. Tracking surveys
+D. Recall testing
+A
+On a more general level, ... includes all the various marketing communication messages from marketing communication. It also includes personal experiences that create and maintain a coherent brand image
+
+A. brand communication
+B. marketing communication
+C. promotion
+D. advertisement
+A
+A strategy that directs marketing efforts at the consumer and attempts to pull the product through the channel.
+
+A. Pull strategy
+B. Pulsing strategy
+C. Push strategy
+D. Direct response
+A
+....emphasizes statement that the product can do for the user by translating the product feature or attribute into something that benefits the consumer. For example, a General Motors' electric car ad focuses on the product feature (the car doesn't use gas) and translates it into a benefit: lack of noise (no pistons, valves, or exhaust) and low mileage costs. This content describes for which type of rational customer-focused selling premises?
+
+A. A benefit type
+B. A promise type
+C. A reason why type
+D. A unique selling proposition type
+A
+.... is designed to uncover the whys of the buys as well as the why nots
+
+A. Insight research
+B. Market research
+C. Consumer research
+D. Advertising research
+C
+Connect objective on Facets Model of Effects
+
+A. Create attention, awareness, interest, recognition.
+B. Touch emotions and create feelings
+C. Deliver information, aid understanding, create recall
+D. Establish brand identity and associations, transform a product into a brand with distinctive personality and image.
+C
+Which is NOT right about " marketing communication"?
+
+A. Marcom for short
+B. The element in the marketing mix that communicates the key marketing messages to target audiences.
+C. This involves the use of a variety of tools and functions, such as advertising, PR, sales promotion, direct response, event and sponsorships, point of sales, digital media,..
+D. IMC for short
+D
+An area in which the company could develop an advantage over its competition.
+
+A. Strengths
+B. Weaknesses
+C. Opportunities
+D. Threats
+C
+A business traits, conditions, and situations that are perceived as negatives, for example: losing market bare
+
+A. Strengths
+B. Weaknesses
+C. Opportunities
+D. Threats
+B
+Which of the following is a tool for IMC evaluation and measurement?
+
+A. Strategic consistency
+B. Intrinsic contact points
+C. SWOT analysis
+D. Lifetime value
+A
+Which era had the main characteristics of "The power of agencies exploded, with a resurgence of art, inspiration, and intuition"?
+
+A. The Early Age of Print: 15th-18th century
+B. The Early Age of Agencies: 1840s-1890s
+C. The Era of Accountability and Integration
+D. The Social Media Era
+B
+Which era had the main characteristics of "Clients want ads that produced sales. The public expects sode) responsibility. Managers adopted IMC to better coordinate brand communication"?
+
+A. The Early Age of Print: 15th-18th century
+B. The Early Age of Agencies: 1840s-1890s
+C. The Era of Accountability and Integration
+D. The Social Media Era
+C
+Which era had the main characteristics "Mechanization spurred literacy, which encouraged businesses to advertise beyond their locations"?
+
+A. The Early Age of Print: 15th-18th century
+B. The Early Age of Agencies: 1840s-1890s
+C. The Era of Accountability and Integration
+D. The Social Media Era
+A
+A trend or development in the environment that will erode business unless the company takes action, such as competition and economic downturns
+
+A. Strengths
+B. Weaknesses
+C. Opportunities
+D. Threats
+D
+Used in longer copy blocks, begin a new section of the copy. They are usually bold type or larger than the body copy. Their purpose is to make the logic clear to the reader. They are useful for people who scan copy and they help them get a sense of what the copy says.
+
+A. Subhead
+B. Slogan
+C. Headline
+D. Tagline
+A
+This is used to identify people who are in the market for the product.
+
+A. Market research
+B. Consumer research
+C. Brand communication research
+D. IMC research
+B
+The goal of this research methodology is to move beyond the limitations of what consumers can explain in words or in responses to preplanned questions. This kind of research provides insight into the underlying reasons for how consumers behave and why.
+
+A. Qualitative research
+B. Quantitative research
+C. Experimental research
+D. Primary research
+B
+This type of research evaluates impact after the campaign is over or after the ad ran. This research encompasses benchmark or baseline studies to gauge movement. These can be research company norms, or they can be based on previous campaigns by this brand.
+
+A. Developmental research
+B. Diagnostic research
+C. Concurrent research
+D. Post-testing research
+D
+Carly saw a billboard for a local church that said, "CH_ _ CH—What's missing?" This is an example of which technique for creating original and unexpected ideas?
+
+A. Cliché
+B. An unexpected association
+C. Metaphor
+D. Play on words
+D
+Which of the following are objectives related to the Connect facet of the Facets Model of Effects?
+
+A. Deliver information and understanding
+B. Touch emotions and create feelings
+C. Change attitudes, create conviction and preference
+D. Establish brand identity and associations
+B
+What are the two general types of printed images?(NHUNG HOÀNG)
+
+A. Formal and informal
+B. Digitizations and illustrations
+C. Color and sepia
+D. Line art and halftones
+D
+Which of the following is an example of a corporate publication?
+
+A. Newsletter
+B. Public service advertisement
+C. Banner ad
+D. News release
+B
+Which of the following is NOT considered a process color?
+
+A. Magenta
+B. Cyan
+C. Yellow
+D. Brown
+D
+Which of the following is NOT part of the modern definition of advertising?(NHUNG HOÀNG)
+
+A. is a paid form of communication
+B. has an identified sponsor
+C. is usually personal in nature
+D. provides information about products
+E. uses mass and interactive media
+C
+Which of the following positions in an advertising agency is most closely involved with creative development?
+
+A. account executive
+B. account planner
+C. media buyer
+D. copywriter
+E. management supervisor
+C
+A(n) ________ assesses the external and internal environments that affect marketing operations.
+
+A. market situation analysis
+B. point-in-time analysis
+C. strategic business unit analysis
+D. mission statement
+E. action plan
+A
+Establishing in the consumer's mind what a brand offers and how it compares with the competition is _____
+
+A. benchmarking
+B. targeting
+C. segmenting
+D. positioning
+E. attributing
+D
+When an agency gets a new client, the first thing the agency team should do is learn about the _______.
+
+A. competition
+B. social media
+C. network of associations
+D. brand
+E. target market
+D
+Which of the following is a type of direct-action headline?
+
+A. news announcement
+B. puzzle
+C. association
+D. question
+E. provocation
+A
+Which element in print advertising conveys the main message so that people get the point of the ad?
+
+A. headline
+B. overline
+C. body copy
+D. subhead
+E. call to action
+A
+Advertising creatives use the term ______ to refer to the process of coming up with a new marketing communication idea.
+
+A. positioning
+B. targeting
+C. concepting
+D. branding
+E. extending
+C
+Interest and recognition are both surrogate measures for the key effect of___(NHUNG HOÀNG)
+
+A. perception
+B. emotion
+C. cognition
+D. association
+A
+A(n) ________ writes the script for a broadcast production.
+
+A. copywriter
+B. arranger
+C. producer
+D. director
+A
+Who is the person most responsible for designing images that tell stories and create brand impressions in an advertisement?
+
+A. copywriter
+B. art director
+C. producer
+D. photographer
+B
+A commercial's _______ refers to how fast or slowly the action progresses.
+
+A. storytelling
+B. action
+C. direction
+D. key frame
+E. pace
+E
+____ is the consumer decision-making stage in which brand communication helps sort out products on the basis of tangible and intangible features.
+
+A. Need recognition
+B. Information search
+C. Evaluation of alternatives
+D. Risk perception
+E. Adoption rate
+C
+What is at the core of all account planning?
+
+A. consumer research
+B. pricing plans
+C. situation analysis
+D. competitive advantage
+E. distribution management
+A
+Which component of a communication brief provides the reason to believe the proposition?
+
+A. brand position
+B. support
+C. creative direction
+D. brand imperative
+E. proposition or selling idea
+B
+Advertising begins with the __________, the person or organization that uses advertising to send out a message about its products.
+
+A. supplier
+B. media
+C. agency
+D. advertiser
+E. vendor
+D
+A(n)___ connects with some emotion that makes the product particularly attractive or interesting.
+
+A. claim
+B. appeal
+C. feature
+D. attribute
+E. argument
+B
+(Continuous Tone): Image with a continuous range of shades from light to dark(NHUNG HOÀNG)
+
+A. Duotone
+B. Halftone
+C. Monotone
+D. Biotone
+B
+A valuable tool for media planners,........... is provided by companies such as MRI and is usually organized by product category and cross-tabulated by audience groups and their consumption patterns
+
+A. Client information
+B. Market research
+C. Competitive advertising
+D. A media usage profile
+B
+Which sentence is wrong about " a business plan"?
+
+A. This is the biggest, most macro level. Goal: Max ROI
+B. Provide direction for advertising planning and other areas of marketing communication
+C. May cover an SBU (strategic business unit)
+D. Create for marketing function of the business
+D
+Business activities that direct the exchange of goods and services between producers and consumers. (e)s is designed to build brand and customer relationships that generate sales and profit or, in the case of non-profit organizations, memberships, volunteers, and donations.
+
+A. Account Planning
+B. Marketing
+C. Marketing Mix
+D. Nonprofit Advertising
+B
+Who are the key player in marketing industry?
+
+A. Marketers, marketer partners
+B. Suppliers and vendors
+C. Distributors and retailers
+D. All of others are correct
+D
+Which concept refers to marketers tracking how much competing brands spend on media compared to how much they are spending on their particular brand?
+
+A. Share of market
+B. Share of voice
+C. Share of media
+D. Share of spending
+B
+Which function of advertising is described in the sentence: "Advertising may persuade peoples to buy things"?
+
+A. Information
+B. Identification
+C. Persuasion
+D. None of other is correct
+C
+This is made up of tangible items (art, literature, buildings, furniture, clothing, and music) and intangible concepts (history, knowledge, laws, morals, customs, and even standards of beauty) that together define a group of people or a way of life.
+
+A. Psychological influences
+B. Behavioral influences
+C. Social/ Cultural influences
+D. All of others are correct
+C
+(Kiểu hỏi khác: This is made up of tangible items—such as art, literature, buildings, and music—and intangible concepts-such as knowledge, laws, morals, and customs—that together define a group of people or a way of life
+
+A. Society
+B. Culture
+C. Ethnicity
+D. Behavior
+B)
+B
+A paid nonpersonal communication from an identified sponsor using mass media to persuade or influence an audience.(073-356-8678)
+
+A. Advertising
+B. Marketing
+C. Marketing Mix
+D. Nonprofit Advertising
+A
+Which of the following is a benefit statement that looks to the future and predicts that something good will happen if you use the product?
+
+A. Substantiation
+B. Claim
+C. Promise
+D. Reason why
+C
+Most brands use a variety of targeted media vehicles known as a.......
+
+A. media mix
+B. media strategy
+C. heavy-up schedule
+D. continuous strategy
+A
+A distinctive catch phrase that serves as a motto for a campaign, brand, or company. It is used across a variety of marketing communication messages and over an extended period of time
+
+A. Subhead
+B. Slogan
+C. Headline
+D. Tagline
+B
+This compiles information about the product, the product category, competitors, and other details of the marketing environment.
+
+A. Market research
+B. Consumer research
+C. Brand communication research
+D. IMC research
+A
+Must be distinctive and familiar in terms of name, logo, colors, typeface, design, and slogan. These contents come to terms of ...
+
+A. Brand identity
+B. Brand personality and liking
+C. Brand position and leadership
+D. Brand communication
+A
+Which sentence(s) is/are TRUE about "Secondary research" ?
+
+A. Background research that uses available published information about a topic
+B. When advertising people get new accounts or new assignments, they start by reading everything they can find on the product, company, industry, and competition: sales reports, annual reports, complaint letters, and trade articles about the industry. They are looking for important facts and key insights.
+C. This kind of research has been collected and published by someone else.
+D. All of others are correct
+D
+The use of an established brand name with a related line of products is......
+
+A. Brand advertising
+B. Brand extension
+C. Co-branding
+D. Brand licensing
+B
+Which function of advertising is described in the sentence: "Advertising identifies a product, the store where the product is sold, or both the product and the store"?
+
+A. Information
+B. Identification
+C. Persuasion
+D. None of other is correct
+B
+.... is a term to refer to whom do we want to speak? (brand loyal, heavy users, infrequent users, competition's users, etc.)
+
+A. Brand personality
+B. Target audience
+C. Consumer insights
+D. Brand imperatives
+B
+Which sentence is WRONG about SWOT analysis
+
+A. The primary tool used to make sense of the information gathered and identify a key problem related to a brand or product
+B. Stands for strengths, weaknesses, opportunities, and threats.
+C. In strategic planning the idea is to leverage the strengths and opportunities and address the weaknesses and threats, which is how the key problems and opportunities are identified.
+D. All of others are correct
+A
+Embrace that unexpected moment when the idea comes, often when your mind is relaxed and you're doing something else. This content belongs to ..... in the creative process
+
+A. Step 1. Immersion
+B. Step 2. Ideation
+C. Step 3. Illumination
+D. Step 4. Incubation
+C
+Read, research, and learn everything you can about the problem. This content belongs to ...in the creative process
+
+A. Step 1. Immersion
+B. Step 2. Ideation
+C. Step 3. Brainfog
+D. Step 4. Incubation
+A
+Which of the following is NOT included in a typical creative brief?
+
+A. Media considerations
+B. Budget considerations
+C. Brand position
+D. Target audience
+A
+Which sentence is described as "secondary resource"?
+
+A. Information that is collected for the first time from original sources
+B. Companies and their agencies do their own tracking and monitoring of their customers' behavior.
+C. This has been collected and published by someone else.
+D. None of them is correct
+C
+.... is the activity, set of institutions, and processes for creating, communicating, delivering, and exchanging offerings that have value for customers, clients, partners, and society at large.
+
+A. Advertising
+B. Marketing
+C. Branding
+D. Direct marketing
+B
+Which of the following include exposure to traditional mass media, word-of-mouth, place-based media, in-store brand exposures, and interactive media?
+
+A. Contact points
+B. Gross rating points
+C. Aperture points
+D. Impression points
+A
+A tracking survey is LEAST likely to focus on which of the following?
+
+A. Recall
+B. Recognition
+C. Comprehension
+D. Conviction
+C
+...is a way to identify the location a product or brand occupies in consumers' minds relative to its competitors, such as higher, lower, bigger, or more expensive.
+
+A. Positioning
+B. Branding
+C. Marketing
+D. Placing
+A
+Which influences affect the way consumers make purchasing decision?
+
+A. Psychological influences
+B. Behavioral influences
+C. Social/ Cultural influences
+D. All of others are correct
+D
+... include members of the distribution chain, which is made up of businesses we call resellers or intermediaries
+
+A. Channel markets
+B. Advertisement
+C. Marketing
+D. communication
+A
+For several years, Nike included the phrase "Just Do It" in all of its advertisements, print and television. This phrase is an example of a(n).....
+
+A. Caption
+B. Underline
+C. Slogan
+D. Call-out
+C
+This research focuses on all the elements of advertising-message, media, evaluation, and competitors' advertising
+
+A. Market research
+B. Consumer research
+C. Brand communication research
+D. IMC research
+D
+It should have human characteristics like loving, trustworthy, sophisticated. These contents come to terms of
+
+A. Brand identity
+B. Brand personality and liking
+C. Brand position and leadership
+D. Branding
+B
+Establishes a corporate identity, attempts to win the public over to the organization's point of view is .... of the common types of advertising
+
+A. Institutional advertising/corporate advertising
+B. Retail or local advertising
+C. Direct-response advertising
+D. Business-to-business advertising
+A
+Think/ understand (Cognition) objective on Facets Model of Effects
+
+A. Create attention, awareness, interest, recognition.
+B. Touch emotions and create feelings
+C. Deliver information, aid understanding, create recall
+D. Establish brand identity and associations, transform a product into a brand with distinctive personality and image.
+C
+Which of the following is considered a "hook" that helps engage the attention of a viewer and contributes to the depth of memory traces the brand message leaves behind?
+
+A. emotion
+B. logic
+C. information
+D. comparison
+A
+.................indicate the weight or efficiency of a media plan; the more of these a plan has the more weight the media buy delivers
+
+A. Brand development index (BDI)
+B. Category development index (CDI)
+C. Gross rating points (GRP)
+D. Targeted cost per thousand (TCPM)
+C
+A shopper waiting in a supermarket checkout line decides to buy a candy bar. Which of the following is most likely the path to the shopper's decision?
+
+A. think/do/feel
+B. think/feel/do
+C. feel/think/do
+D. do/feel/think
+D
+Which of the following can be used to provide marketers with a deeper understanding of how low-attention processing actually works and what motivates people into unconscious, intuitive decision making?
+
+A. microtargeting
+B. niche marketing
+C. neuromarketing
+D. behavioral targeting
+C
+Which of the following is prepared by the account planner to summarize the basic marketing and advertising strategy?
+
+A. Creative brief
+B. Positioning statement
+C. Message objective
+D. Unique selling proposition
+A
+The ROI of creativity stands for ________.
+
+A. Real, original, and intense
+B. Relevant, original, and impact
+C. Relevant, original, and intense
+D. Real, on-target, and invested
+B
+Which type of thinking is logical, orderly, and linear?
+
+A. Right-brain
+B. Left-brain
+C. Top-brain
+D. Back-brain
+B
+In which step of the classic creative process does the problem solver look at the problem from every angle, develop ideas, and generate as many alternatives as possible?
+
+A. Ideation
+B. Brainfag
+C. Incubation
+D. Illumination
+A
+Delivering information and aiding understanding are objectives related to which facet of the Facets Model of Effects?
+
+A. Think/Understand
+B. Feel
+C. Believe
+D. Connect
+A
+Which approach uses emotional appeals or images to create a response based on attitudes, moods, dreams, and feelings?
+
+A. Persuasive sell
+B. Head sell
+C. Hard sell
+D. Soft sell
+D
+Which of the following techniques involves describing everything that comes into your mind when you imagine a given word?
+
+A. Free association
+B. Conceptual thinking
+C. Problem solving
+D. Dramatization
+A
+In which advertising message does a speaker present evidence and use an argument to persuade the audience?
+
+A. Soft sell
+B. Lecture
+C. Teaser
+D. Appeal
+B
+The slogan "Have it your way" is an example of which of the following literary techniques used by advertisers?
+
+A. Direct address
+B. Parallel construction
+C. Music
+D. Rhyme
+A
+The Microsoft slogan "Where do you want to go today?" is an example of which of the following literary techniques?
+
+A. Rhyme
+B. Combination
+C. Parallel construction
+D. Direct address
+D
+Which of the following is NOT a reason to use visuals in advertising, based on the Facets Model of Effects?
+
+A. to anchor associations
+B. to cement beliefs
+C. to communicate quickly
+D. to replace copy
+D
+The Michelin Man is an illustration that appears in many advertisements for Michelin tires. The Michelin Man, who is made of tires, represents the brand. The Michelin Man is an example of a..........
+
+A. logo
+B. brand personality
+C. brand icon
+D. brand image
+C
+Which of the following is NOT included in the art director's toolkit for print advertising?
+
+A. illustrations
+B. typefaces
+C. layout
+D. dubbing
+D
+What colors should an art director use to bring a friendly tone to an ad?
+
+A. Deep blues and greens
+B. Yellow and red
+C. Cool colors
+D. Warm colors
+E. Pastel colors
+E
+Which of the following is NOT a decision an art director makes in designing type?
+
+A. Translation
+B. Capitalization
+C. Vertical height
+D. Legibility
+A
+The way elements are positioned to lead the eye through a print ad is known as ............
+
+A. Dominance
+B. Balance
+C. Movement
+D. Simplicity
+C
+Which type of design appeared in the 1990s as a rejection of the niceties of traditional design?
+
+A. Psychedelic
+B. Pop art
+C. Grunge
+D. Art deco
+C
+Which design principle describes how all of the elements in an ad come together?
+
+A. unity
+B. oneness
+C. simplicity
+D. direction
+A
+The saying "KISS" refers to the design principle of .........
+
+A. unity
+B. movement
+C. simplicity
+D. direction
+C
+Which of the following layouts uses a single dominant visual that occupies about 60 to 70 percent of the ad's space?
+
+A. picture window
+B. all art
+C. dominant type
+D. panel
+A
+Small preliminary sketches of various layout ideas.
+
+A. Rough layouts
+B. Semicomps
+C. Storyboards
+D. Thumbnail sketches
+D
+In which layout stage of a print ad are the elements assembled in their final position for reproduction?
+
+A. Comprehensives
+B. Mechanicals
+C. Rough layouts
+D. Semicomps
+B
+In which layout stage of a print ad is the ad drawn to size and used for presentation either in-house or to the client?
+
+A. Photoboards
+B. Mechanicals
+C. Rough layouts
+D. Semicomps
+D
+Stan is a copywriter, and Bob is an art director working on a client's account. They are brainstorming ideas and trying to imagine what the finished ad might look like. What technique are they using?
+
+A. Creative aerobics
+B. Thought listing
+C. "Drawing on the right side of the brain"
+D. Visualization
+D
+Sam is trying to convey a natural, no-nonsense tone in a print ad. Which of the following color(s) should she use in the ad?
+
+A. Earth tones
+B. Pastels
+C. Black and white
+D. Red and blue
+A
+The application of a thin metallic coating molded to the surface of the image with heat and pressure is called..........
+
+A. Foil stamping
+B. Embossing
+C. Debossing
+D. Digitizing
+A
+The tab on a file folder is an example of a(n)............
+
+A. Emboss
+B. Die-cut
+C. Tint block
+D. Overlay
+B
+Separate preprinted ads provided by the advertiser to be glued into a publication as the publication is being assembled are known as.............
+
+A. Die-cuts
+B. Tint blocks
+C. Overlays
+D. Tip-ins
+D
+Moving an inanimate object a bit at a time and filming it frame by frame
+
+A. Stop motion
+B. Stop action
+C. Micro filming
+D. Slow motion
+A
+Finding the right director, locating or building a set, and casting the talent are all elements of which step in the production of a television commercial?
+
+A. Message design
+B. Preproduction
+C. Production
+D. Postproduction
+B
+Which of the following refers to information such as demographic profiles of current customers, responses to previous promotions, product sales and distribution patterns, and the budget of how much can be spent on media?
+
+A. Client information
+B. Market research
+C. Competitive advertising
+D. Consumer behavior reports
+A
+Which of the following is a standard research display format that allows multiple variables of related data to be grouped together?
+
+A. CrossTab
+B. Cross relate
+C. Multivariate
+D. Univariate
+A
+A designated marketing area (DMA) assignment is based on ..............
+
+A. the number of television stations in the area
+B. the number of broadcast media outlets available
+C. how many households have cable or satellite television
+D. which city provides the majority of the households' TV programming
+D
+Rates for .......... advertisements are based on a guaranteed circulation
+
+A. Magazine
+B. Television
+C. Outdoor
+D. Online
+A
+In radio, the percent of homes actually tuned in to a particular station is measured through..........
+
+A. Coverage
+B. Exposures
+C. Gross impressions
+D. Ratings
+D
+In television, the percent of viewers watching a particular show based on the number of television sets that are on during that particular time slot is measured through..............
+
+A. Exposures
+B. Gross impressions
+C. Ratings
+D. Share of audience
+D
+Traditionally, outdoor boards have been purchased and measured in terms of .............., which are estimates of the percentages of the population who had the opportunity to see the sign
+
+A. Coverage
+B. Exposure
+C. Showings
+D. Ratings
+C
+Ann was gathering the information needed for the media plan for a client. Which of the following most likely provided Ann with demographic profiles of current customers, previous promotions, and the budget
+
+A. Client information
+B. Market research
+C. Competitive advertising
+D. Media usage profiles
+A
+What is the first of the four basic steps in media planning?
+
+A. Developing a media strategy
+B. Establishing metrics
+C. Analyzing metrics
+D. Identifying the target audience
+D
+Which concept describes the percent of people exposed to a brand message one or more times within a specified period of time?
+
+A. Reach
+B. Frequency
+C. Continuity
+D. Impression
+A
+Which term refers to the number of people in a vehicle's audience who are neither customers nor prospects?
+
+A. Reach distribution
+B. Carryover
+C. Wasted reach
+D. Average frequency
+C
+What type of schedule is used when proportionately more of the marketing budget is spent in special regions or DMAs?(073-356-8678)
+
+A. Continuous schedule
+B. Scheduled Flight
+C. Heavy-up schedule
+D. Pulsing schedule
+C
+Which of the following is most important for the evaluation of an IMC campaign?
+
+A. The campaign should be limited to one or two specific objectives.
+B. The campaign should have specific, measurable objectives.
+C. The campaign should be limited to one or two marcom tools.
+D. The campaign should be evaluated by the same team who planned it.
+B
+Tom is a senior account planner in charge of concept testing. At which stage of a campaign is concept testing performed?
+
+A. Before an ad or campaign runs
+B. While an ad or campaign runs
+C. After an ad or campaign has run
+D. Before and after a campaign runs
+A
+Which of the following is a reason that advertisers use other measures in addition to sales as a measure of advertising effectiveness?
+
+A. Sales are never an accurate measurement of advertising effectiveness.
+B. Measuring other data is far cheaper than measuring sales.
+C. Manufacturers, and therefore their advertising agencies, lack access to sales data because it is collected by retailers and not shared.
+D. Creating higher levels of brand recognition is a key objective of advertising and isn't necessarily reflected in sales.
+D
+Which of the following is NOT a surrogate measure for the sales impact of an advertising campaign?
+
+A. brand awareness
+B. number of purchases made
+C. consumer liking of a brand
+D. change in brand perception
+B
+Which of the following allows the advertiser to tell whether a particular advertisement is above or below the average score for the brand or its product category?
+
+A. Industry ratios
+B. Averages
+C. Norms
+D. Industry standards
+C
+Which of the following is NOT a main communication effect that is assessed in various types of advertising research?
+
+A. Persuasion
+B. Investigation
+C. Cognition
+D. Perception
+B
+Which post-campaign evaluation tool reads information from a shopper's identification card and records that along with information about products that the shopper purchased?
+
+A. Scanner research
+B. Semiotics testing
+C. Tracking research
+D. Single-source research
+A
+In which type of evaluative research are consumers asked to join a panel and allow their actual purchases to be tracked?
+
+A. Persuasion tests
+B. Likability tests
+C. Inquiry tests
+D. Scanner research
+D
+Which type of evaluative research involves arranging to have test commercials delivered to a select group of households within a market, and then comparing the purchase behavior of the select group to that of a control group of households?
+
+A. Persuasion tests
+B. Likability tests
+C. Inquiry tests
+D. Single-source research
+D
+Mars, Inc., the makers of M&M's candy, was recently running television ads featuring the colorful nature of its candy with the tagline, "Chocolate is better in color." What type of research would be used to evaluate these commercials as the campaign is running?
+
+A. Development research
+B. Tracking study
+C. Post-testing research
+D. Concept testing
+B
+This visual element attracts attention, provides realism, establishes moods, and builds brand identity
+
+A. Color
+B. Illustrations and Photos
+C. Animation
+D. Film shots
+A
+The appearance of the ad's printed matter.
+
+A. Color
+B. Spot color
+C. Typography
+D. Film shots
+C
+This layout uses a number of visuals of matched or proportional sizes. If the ad has multiple panels all of the same size, the layout can look like a window pane or comic strip panel.
+
+A. Panel or Grid
+B. Picture Window
+C. All Art
+D. Dominant Type or All Copy
+A
+A common layout format is one with a single, dominant visual that occupies about 60 to 70 percent of the ad's space. Underneath it is a headline and copy block. The logo or signature signs off the message at the bottom.
+
+A. Panel or Grid
+B. Picture Window
+C. All Art
+D. Dominant Type or All Copy
+B
+The art fills the frame of the ad and the copy is embedded in the picture.
+
+A. Panel or Grid
+B. Picture Window
+C. All Art
+D. Dominant Type or All Copy
+C
+This type of formula writing violates all the guidelines for writing effective copy that we've been describing. It is full of clichés (as easy as pie), superlatives and puffery (best in class), stock phrases (buy now; free trial offer), and vague generalities (prices too low to advertise). For example, consider this copy; can you hear yourself saying something like this to a friend?
+
+A. Adese
+B. Display copy
+C. Body copy
+D. Headlines
+A
+A depressed image created on paper by applying heat and pressure
+
+A. Printing
+B. Debossing
+C. Embossing
+D. Heat transferring
+B
+An abrupt transition from one shot to another
+
+A. Pause
+B. Effect
+C. Cut
+D. Interrupt
+C
+A film or video technique in which objects or drawings are filmed one frame at a time
+
+A. Animation
+B. Timelapse
+C. Storyboard
+D. Stop motion
+A
+Areas in a layout that aren't used for type or art.
+
+A. Empty space
+B. Die cut
+C. White space
+D. Dead space
+C
+The process of splitting a color image into four images recorded on negatives; each negative represents one of the four process colors
+
+A. Registration
+B. Color seperation
+C. Four-color printing
+D. Release prints
+B
+A layout that looks as much the final printed ad as possible
+
+A. Font
+B. Production Notes
+C. Morphing
+D. Comprehensives
+D
+A printing process that prints an image from a smooth-surface chemically treated printing plate
+
+A. Answer Print
+B. Offset Printing
+C. Postproduction
+D. Font
+B
+Using a sharp-edged stamp to cut irregular shapes in printed materials
+
+A. Die-Cut
+B. Line Art
+C. Layout
+D. Rough Cut
+A
+The process of outlining every step and decision to be made in the production process in a set of production notes that are compiled from a preproduction meeting with the creative team, producer, and other key participants
+
+A. Font
+B. Visualization
+C. Preproduction
+D. Color Separation
+C
+Imagining what the finished copy will look like. *Copywriters and Art Directors do this during the brainstorming process, as they are trying to transform creative concepts into words and pictures
+
+A. Preproduction
+B. Digitization
+C. Visualization
+D. Offset Printing
+C
+Photographs; images that have a range of tones from white to black and all the shades of gray in between
+
+A. Claymation
+B. Composition
+C. Continuous Tone/Halftones
+D. Video Editing
+C
+A distinctive brand mark that is legally protected
+
+A. Logo
+B. Take
+C. Rough Cut
+D. Layout
+A
+How easy or difficult a type is to read
+
+A. Legibility
+B. Font
+C. Navigation
+D. Digitization
+A
+See/hear effect on Facets Model of Effects
+
+A. Create attention, awareness, interest, recognition.
+B. Touch emotions and create feelings
+C. Deliver information, aid understanding, create recall
+D. Establish brand identity and associations, transform a product into a brand with distinctive personality and image
+A
+Change attitudes, create conviction and preference, stimulate trust.
+
+A. Feel emotions
+B. Think/Understand effect
+C. Connect
+D. Believe
+D
+Uses a distinct difference in attributes that creates a meaningful consumer benefit.
+
+A. Preemptive
+B. Unique selling proposition
+C. Brand image
+D. Positioning
+B
+Establishes a place in the consumer's mind relative to the competition
+
+A. Preemptive
+B. Unique selling proposition
+C. Brand image
+D. Positioning
+D
+A person who testifies on behalf of the product (goods, services, ideas) is a/an
+
+A. Humour
+B. Endorser
+C. Promise
+D. E score
+B
+The communication approach that makes the most sense given the brand's marketing situation and the target audience's needs and interests is
+
+A. Message design
+B. Message strategy
+C. Execution
+D. Tagline
+A
+Big ideas that are so powerful that they are remembered but not the brand is called
+
+A. Vampire creativity
+B. Image advertising
+C. Selling premise
+D. Big idea
+A
+The person responsible for managing the work of the creative team is called
+
+A. Feature
+B. Creative director
+C. Creative platform
+D. Creative strategy
+B
+A message strategy that positions the brand as a way to avoid a problem is
+
+A. Relevant
+B. Problem solution message
+C. Brand icon
+D. Problem avoidance message
+D
+an advertising strategy that shows how the product works
+
+A. demonstration
+B. illumination
+C. call to action
+D. image advertising
+A
+ad copy is written as a conversation or an announcement and the voices carry emotional cues
+
+A. spokesperson
+B. tone of voice
+C. message design
+D. creative concept
+B
+the determination of the right message for a particular target audience that delivers the advertising objectives
+
+A. creative director
+B. message strategy
+C. creative strategy
+D. message design
+B
+This research through pretesting estimates the likelihood that an ad idea will work or that one idea is better than another.
+
+A. Developmental research
+B. Diagnostic research
+C. Concurrent research
+D. Post-testing research
+A
+This research use tracking studies and test marketing to monitor the way the campaign which is unfolding and how the messages and media are working
+
+A. Developmental research
+B. Diagnostic research
+C. Concurrent research
+D. Post-testing research
+C
+This type of research deconstructs an ad to see what elements are working or not working. Researchers who evaluate commercials use frame by-frame or moment-by-moment analysis to identify strengths and weaknesses in an ad.
+
+A. Developmental research
+B. Diagnostic research
+C. Concurrent research
+D. Post-testing research
+B
+This helps marketers make final go/no-go decisions about finished or nearly finished ads
+
+A. Concept Testing
+B. Tracking studies
+C. Moment-by-moment tests
+D. Pretesting
+D
+Research in this type compares the effectiveness of various message strategies and their creative idea
+
+A. Concept Testing
+B. Engagement Tests
+C. Moment-by-moment tests
+D. The coincidental survey technique
+A
+An advertising strategy that focuses on creating an image or perception of a brand.
+
+A. Marketing communication
+B. Brand communication
+C. Brand advertising
+D. IMC
+C
+This factors of interest to advertisers include state of mind, needs and wants, motivations, as well as attitudes, personality, and thoughts and thinking patterns.
+
+A. Psychological influences
+B. Behavioral influences
+C. Social/ Cultural influences
+D. All of others are correct
+A
+You are a product of your social environment, which determines your social class or group. Reference groups, family, and friends also are important influences on opinions and consumer behavior and affect many of your habits and biases.
+
+A. Psychological influences
+B. Behavioral influences
+C. Social/ Cultural influences
+D. All of others are correct
+C
+This type of segmentation divides people into groups based on product category and brand usage.
+
+A. Demographic Segmentation
+B. Psychographic Segmentation
+C. Life-Stage Segmentation
+D. Behavioral Segmentation
+D
+This type is based on the particular stage in consumers' life cycle, which includes such categories as children, young people living at home, college students, singles living on their own, couples, families with children, empty nesters, and senior singles living alone.
+
+A. Demographic Segmentation
+B. Psychographic Segmentation
+C. Life-Stage Segmentation
+D. Behavioral Segmentation
+C
+The primary tool used to make sense of the information gathered and identify a key problem related to a brand or product, stands for strengths, weaknesses, opportunities, and threats.
+
+A. SWOT analysis
+B. Situation analysis
+C. Competition analysis
+D. Market analysis
+A
+A business positive traits, conditions, and good situations.
+
+A. Strengths
+B. Weaknesses
+C. Opportunities
+D. Threats
+A
+Which kind of research can used in planning advertising?
+
+A. Market research
+B. Consumer research
+C. Brand communication research
+D. IMC research
+E. Strategic research
+F. All of others are correct
+F
+What are advertising's basic functions?
+
+A. Identification, Information, Innovation
+B. Information, Identification, Persuation
+C. Identification, Information, Persuation
+D. All of others are correct
+C
+Which function of advertising is described in the sentence: "Advertising provides information about a product"?
+
+A. Information
+B. Identification
+C. Persuasion
+D. None of other is correct
+A
+The idea that a brand takes on familiar human characteristics, such as loving, competent, trustworthy or sophisticated
+
+A. Brand identity
+B. Brand personality and liking
+C. Brand position and leadership
+D. Branding
+B
+In..., the message begins with a problem and then showcases the product as the solution.
+
+A. A straightforward message
+B. A demonstration message
+C. A comparison message
+D. A problem solution message
+D
+A sentence or short piece of copy that explains what you are looking at in a photo or illustration. This term wasn't used very often in advertising because the visuals are assumed to be self-explanatory; however, readership studies have shown that, after the headline have high readership.
+
+A. Caption
+B. Slogan
+C. Headline
+D. Tagline
+A
+.... is the intangible value of the brand based on the strength of its relationships with stakeholders, the effectiveness of its identity elements, its reputation and perceived performance, and its intellectual property, such as product formulations.
+
+A. Brand equity
+B. Branding
+C. Brand value
+D. Brand communication
+A
+The goal of .....is to locate a product in the consumer's mind that highlights its most valuable features and advantages relative to its competition.
+
+A. branding
+B. positioning
+C. pricing
+D. advertising
+B
+What is the first step in the development of a marketing plan?
+
+A. Select Marketing Objectives
+B. Select Target Markets
+C. Differentiate and Position
+D. Identify Threats and Opportunities
+D
+Which test can be used in concurrent research?
+
+A. Concept Testing
+B. Tracking studies
+C. Moment-by-moment tests
+D. The coincidental survey technique
+B
+Used by not-for-profit organizations to reach customers, members, volunteers, and donors is ..... of the common types of advertising (073-356-8678)
+
+A. Brand advertising 
+B. Retail or local advertising 
+C. Direct-response advertising 
+D. Nonprofit advertising
+D
+....,a qualitative method where a small group of users or potential users gather to discuss a product, brand, or advertising
+
+A. Focus groups
+B. Survey research
+C. Secondary research
+D. Quantitative research design
+A
+..... is scientifically tests hypotheses by comparing different message treatments and how people respond
+
+A. Experimental research design
+B. Secondary research design
+C. Qualitative research design
+D. Focus groups design
+A
+Marketing communication ...to generating meaning and creating something valuable (brand value)
+
+A. builds and enhance brand identity
+B. advertises
+C. sales
+D. make
+A
+Which of the following refers to the rapid spread of a brand message on the Internet through a wide network of contacts?
+
+A. brand stewardship
+B. brand parity
+C. direct marketing
+D. indirect marketing
+E. viral marketing
+E
+Radio and television are examples of __media.
+
+A. print
+B. interactive
+C. digital
+D. outdoor
+E. broadcast
+E
+When using which type of advertising agency does an advertiser produce its own advertising?
+
+A. home agency
+B. agency-of-record
+C. in-house agency
+D. creative boutique
+E. agency network
+C
+A creative __ is typically a small ad agency that concentrates entirely on preparing the creative execution of the idea or the creative product.
+
+A. department
+B. holding company
+C. network
+D. account
+E. boutique
+E
+Which of the following refers to a description of what senior management sees as an organization's future?
+
+A. vision statement
+B. mission statement
+C. business philosophy
+D. social philosophy
+E. competitive advantage
+A
+Which of the following explains the consumer insight and summarizes the basic strategy decisions?
+
+A. creative brief
+B. research brief
+C. business plan
+D. IMC plan
+E. competitive brief
+A
+___ research provides insight into the underlying reasons for how and why consumers think, feel, and behave as they do using tools such as observation, ethnographic studies, in-depth interviews, and case studies.
+
+A. Secondary
+B. Quantitative
+C. Qualitative
+D. Neural
+E. Experimental
+C
+Quantitative research is typically designed to either accurately ___ something or _____ something.
+
+A. investigate; question
+B. explore; observe
+C. count; predict
+D. explore; prove
+E. predict; observe
+C
+In a(n) ___ sample, each person in a population has an equal chance of being selected to be in the sample.
+
+A. aided
+B. unaided
+C. random
+D. selected
+E. observed
+C
+_____ research involves the researcher living the lives of the people being studied.
+
+A. Focus group
+B. Ethnographic
+C. Friendship group
+D. Quantitative
+E. Survey
+B
+A ___ is a group of people an individual uses as a model for behavior in specific situations.
+
+A. subgroup
+B. social class
+C. reference group
+D. normal group
+E. cohort
+C
+In marketing communication, using an idea that someone else has originated is known as ___ advertising.
+
+A. duplicate
+B. left-brain
+C. copycat
+D. right-brain
+E. divergent
+C
+Ads that demonstrate how something works or how to solve a problem are messages that are most likely designed to ___
+
+A. create brand associations
+B. remind loyal customers
+C. teach
+D. touch emotions
+E. resonate
+C
+What is the purpose of the closing paragraph in body copy?
+
+A. to give readers interesting information so that they go back and read the full body copy
+B. to provide specific information such as price and warranty
+C. to highlight the required disclaimers
+D. to draw the reader's attention to the selling premise
+E. to refer back to the creative concept and wrap up the Big Idea
+E
+Which category of headlines is straightforward and informative?
+
+A. call-outs
+B. calls to action
+C. overlines
+D. indirect action
+E. direct action
+E
+Segments of action in a television commercial that occur in a single location are known as ___
+
+A. scenes
+B. photoboards
+C. key frames
+D. storyboards
+E. scripts
+A
+The use of _ lends a dignity and sophistication to a visual.
+
+A. full color
+B. black and white
+C. spot color
+D. blue and yellow
+B
+The appearance of an ad's printed matter in terms of the style and size of typefaces is known as ___
+
+A. medium
+B. typography
+C. composition
+D. design
+B
+The ___ has responsibility for the actual filming of the TV commercial.
+
+A. editor
+B. art director
+C. producer
+D. director
+D
+Noelia operates the audio recording equipment during television commercial shoots. What is Noelia's role?
+
+A. producer
+B. director
+C. arranger
+D. mixer
+D
+Which strategy directs marketing efforts at the consumer and attempts to pull the product through the channel?
+
+A. Pull strategy
+B. Pulsing strategy
+C. Push strategy
+D. Direct response
+A
+Understanding and recall are both surrogate measures for the key message effect of _
+
+A. perception
+B. emotion
+C. cognition
+D. association
+C
+_____ measure the number of responses to an advertisement.
+
+A. Memory tests
+B. Persuasion tests
+C. Likability tests
+D. Inquiry tests
+D
+Bold, fun, exciting, and daring are all examples of___
+
+A. brand promises
+B. brand positions
+C. brand personalities
+D. brand equities
+E. brand value
+C
+The ______ behind a marketing communication message is stated in measurable objectives in areas such as sales and brand reputation.
+
+A. creativity
+B. media choice
+C. buzz
+D. strategy
+E. information
+D
+In a SWOT analysis, a _______ is a positive trait or condition.
+
+A. strength
+B. win
+C. benefit
+D. threat
+E. leverage
+A
+Which component of a communication brief details the brand's essence, personality, and image?
+
+A. communication objectives
+B. problem
+C. target audience
+D. brand imperatives
+E. support
+D
+Which projective technique involves asking consumers to sort through a deck of photos and pick out visuals that represent something, such as typical users of the product or situations in which the product might be used?
+
+A. fill-in-the-blanks
+B. photo elicitation
+C. purpose-driven games
+D. story elicitation
+E. photo sorts
+E
+Which of the following is NOT typically used to determine social class?
+
+A. income
+B. age
+C. family prestige
+D. occupation
+E. education
+B
+Which approach to segmentation divides the market using characteristics such as gender, ethnicity, income, and so forth?
+
+A. demographic segmentation
+B. geographic segmentation
+C. psychographic segmentation
+D. benefit segmentation
+E. behavioral segmentation
+A
+In Taylor's Six-Segment Strategy Wheel, strategies are based on images that consumers have of themselves.
+
+A. ration
+B. acute need
+C. routine
+D. social
+E. ego
+E
+In which type of campaign does the message unfold over time?
+
+A. endorser
+B. lecture
+C. slice-of-life
+D. teaser
+E. slogan
+D
+Which message format is an elaborate version of a problem solution staged in the form of a drama in which "typical people" talk about a common problem and resolve it?
+
+A. demonstration
+B. slice-of-life
+C. teaser
+D. spokes-character
+E. social
+B
+A line at the end of an ad that encourages people to respond and gives information on how to respond is called a(n) _______
+
+A. underline
+B. caption
+C. call to action
+D. overline
+E. call-out
+C
+A sentence or short piece of copy that explains what the viewer is looking at in a photo or illustration is known as a(n)
+
+A. caption
+B. overline
+C. underline
+D. call-out
+E. tagline
+A
+For impact, colors on a billboard should have maximum _____
+
+A. variety
+B. unity
+C. contrast
+D. shadowing
+C
+Lisa writes original music and sometimes writes the lyrics along with the music for radio and television commercials. What is Lisa's role in TV and radio production?
+
+A. producer
+B. director
+C. arranger
+D. composer
+D
+Website traffic volume is measured by the metric of
+
+A. page views
+B. cost-per-lead
+C. click-through rates
+D. conversion rates
+A
+Catalogs and flyers sent to the office or home are examples of which type of promotional tool?
+
+A. trade advertising
+B. direct-response
+C. word-of-mouth
+D. specialties
+E. public relations
+B
+An art director creates ____ to plan out the scenes that will be used in a video
+
+A. semicomps
+B. comprehensives
+C. rough layouts
+D. storyboards
+D
+Proof statements that serve to make a claim believable are referred to as
+
+A. benefits
+B. attributes
+C. substantiation
+D. comparison
+E. problem solution
+C
+Information that is collected for the first time from original sources is called
+
+A. market
+B. quantitative
+C. primary
+D. secondary
+E. government
+C
+A print advertisement for Bloomingdale's features seven separate photographs of products for a trip to the beach, including sunglasses and a beach bag. The largest image in the ad is a photograph of a famous surfer. The headline for the ad appears above the photographs, and smaller text providing details on the products and the sale appears below the photographs. Which type of layout does this ad use?
+
+A. picture window
+B. circus
+C. panel
+D. nonlinear
+C
+A type of formula writing that is full of clichés, superlatives, stock phrases, and vague generalities is known as
+
+A. hyperbole
+B. display copy
+C. Key copy
+D. adese
+E. news copy
+D
+Which of the following is NOT a common method for conducting surveys?
+
+A. in person
+B. by mail
+C. by fax
+D. through the Internet
+E. by phone
+C
+Signs and posters are examples of ___ media.
+
+A. interpersonal
+B. interactive
+C. digital der
+D. outdoor
+E. broadcast
+D
+Previously recorded images-either video, still slides, or moving film-are known as
+
+A. morphs
+B. stock footage
+C. tip-ins
+D. photostats
+B
+Which of the following is the most common type of post-campaign evaluation?
+
+A. tracking study
+B. inquiry testing
+C. concept testing
+D. media optimization
+A
+Which of the following is NOT considered a major type of advertising?
+
+A. brand
+B. retail
+C. direct-response
+D. institutional
+E. generational
+E
+A strategic business unit is best defined as
+
+A. a line of products under a single brand name
+B. all of the product lines offered by a corporation
+C. a functional department within a corporation
+D. a brand
+E. a corporation
+A
+Through its communication of a ____ a brand sets expectations for what a customer believes will happen when the product is used.
+
+A. brand promise
+B. point of differentiation
+C. competitive advantage
+D. brand personality
+E. brand equity
+A
+        `;
+
+        let allQuestions = [];
+        let wrongIndices = JSON.parse(localStorage.getItem('wrongCAA201')) || [];
+        let testBatches = [];
+        const QUESTIONS_PER_TEST = 50;
+        
+        function updateWrongCount() {
+            document.getElementById('wrong-count').innerText = wrongIndices.length;
+        }
+
+        function saveWrong(index) {
+            if (!wrongIndices.includes(index)) {
+                wrongIndices.push(index);
+                localStorage.setItem('wrongCAA201', JSON.stringify(wrongIndices));
+                updateWrongCount();
+            }
+        }
+
+        function removeWrong(index) {
+            wrongIndices = wrongIndices.filter(i => i !== index);
+            localStorage.setItem('wrongCAA201', JSON.stringify(wrongIndices));
+            updateWrongCount();
+        }
+
+        function parseQuestions(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let questions = [];
+            let currentQ = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+
+                if (/^[a-fA-F]$/.test(line) && currentQ && currentQ.options.length > 0) {
+                    currentQ.answer = line.toUpperCase();
+                    currentQ.originalIndex = questions.length;
+                    questions.push(currentQ);
+                    currentQ = null;
+                }
+                else if (/^[a-fA-F][.\)]\s/.test(line) || /^[a-fA-F]\.\s?/.test(line)) {
+                    if (currentQ) currentQ.options.push(line);
+                }
+                else {
+                    if (currentQ && currentQ.options.length > 0) {
+                        currentQ.answer = "Vui lòng xem lại tài liệu";
+                        currentQ.originalIndex = questions.length;
+                        questions.push(currentQ);
+                        currentQ = null;
+                    }
+                    if (!currentQ) {
+                        currentQ = { text: line, options: [], answer: '' };
+                    } else if (currentQ.options.length === 0) {
+                        currentQ.text += '<br>' + line; 
+                    }
+                }
+            }
+            if (currentQ && currentQ.options.length > 0) {
+                if(!currentQ.answer) currentQ.answer = "Vui lòng xem lại tài liệu";
+                currentQ.originalIndex = questions.length;
+                questions.push(currentQ);
+            }
+            return questions;
+        }
+
+        function generateTestBatches() {
+            let indices = Array.from({length: allQuestions.length}, (_, i) => i);
+            
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            
+            testBatches = [];
+            for (let i = 0; i < indices.length; i += QUESTIONS_PER_TEST) {
+                testBatches.push(indices.slice(i, i + QUESTIONS_PER_TEST));
+            }
+            
+            localStorage.setItem('caa201_testBatches', JSON.stringify(testBatches));
+            renderTestMenu();
+        }
+
+        function initTestBatches() {
+            const saved = localStorage.getItem('caa201_testBatches');
+            if (saved) {
+                testBatches = JSON.parse(saved);
+                const totalInSaved = testBatches.reduce((sum, batch) => sum + batch.length, 0);
+                if (totalInSaved !== allQuestions.length) {
+                    generateTestBatches(); 
+                } else {
+                    renderTestMenu();
+                }
+            } else {
+                generateTestBatches();
+            }
+        }
+
+        function renderTestMenu() {
+            const menu = document.getElementById('test-menu');
+            menu.innerHTML = '';
+            
+            testBatches.forEach((batch, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-small';
+                btn.innerText = `Đề ${idx + 1} (${batch.length} câu)`;
+                btn.onclick = () => loadTest(idx);
+                menu.appendChild(btn);
+            });
+
+            const reShuffleBtn = document.createElement('button');
+            reShuffleBtn.className = 'btn-small btn-re-shuffle';
+            reShuffleBtn.innerText = '🔀 Tạo bộ đề mới';
+            reShuffleBtn.onclick = () => {
+                if(confirm("Hành động này sẽ xáo trộn lại toàn bộ câu hỏi để tạo 10 đề mới tinh. Bạn có chắc chắn?")) {
+                    generateTestBatches();
+                    alert("Đã tạo bộ đề mới thành công!");
+                }
+            };
+            menu.appendChild(reShuffleBtn);
+        }
+
+        function toggleTestMenu() {
+            document.getElementById('test-menu').classList.toggle('show');
+        }
+
+        function loadTest(batchIndex) {
+            const indices = testBatches[batchIndex];
+            let testQList = allQuestions.filter(q => indices.includes(q.originalIndex));
+            
+            for (let i = testQList.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [testQList[i], testQList[j]] = [testQList[j], testQList[i]];
+            }
+            
+            renderQuiz(testQList, `🎯 Đang thi thử: Đề số ${batchIndex + 1} (${testQList.length} câu)`);
+            document.getElementById('test-menu').classList.remove('show');
+        }
+
+        function renderQuiz(questions, title) {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+            document.getElementById('mode-title').innerText = title;
+            window.scrollTo(0, 0);
+
+            questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-container';
+                
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'question-text';
+                titleDiv.innerHTML = `Câu ${index + 1}: ${q.text}`;
+                card.appendChild(titleDiv);
+                
+                const ul = document.createElement('ul');
+                ul.className = 'options';
+                let isAnswered = false;
+
+                q.options.forEach(opt => {
+                    const li = document.createElement('li');
+                    li.innerHTML = opt;
+                    
+                    li.onclick = function() {
+                        if (isAnswered) return;
+                        isAnswered = true;
+                        
+                        const chosenLetter = opt.charAt(0).toUpperCase();
+                        const correctLetter = q.answer.trim();
+                        
+                        const allLis = ul.querySelectorAll('li');
+                        allLis.forEach(item => item.classList.add('disabled'));
+
+                        allLis.forEach(item => {
+                            if (item.innerText.charAt(0).toUpperCase() === correctLetter) {
+                                item.classList.add('correct');
+                            }
+                        });
+
+                        if (chosenLetter !== correctLetter) {
+                            this.classList.add('wrong');
+                            saveWrong(q.originalIndex);
+                        } else {
+                            removeWrong(q.originalIndex);
+                        }
+                    };
+                    ul.appendChild(li);
+                });
+                
+                card.appendChild(ul);
+                container.appendChild(card);
+            });
+        }
+
+        function showAll() {
+            renderQuiz(allQuestions, "📚 Đang hiển thị: Toàn bộ câu hỏi");
+            document.getElementById('test-menu').classList.remove('show');
+        }
+
+        function showWrongQuestions() {
+            if (wrongIndices.length === 0) {
+                alert("Tuyệt vời! Bạn chưa có câu hỏi nào làm sai.");
+                return;
+            }
+            const wrongQList = allQuestions.filter(q => wrongIndices.includes(q.originalIndex));
+            renderQuiz(wrongQList, `⚠️ Đang hiển thị: ${wrongIndices.length} câu hỏi bạn đã làm sai`);
+            document.getElementById('test-menu').classList.remove('show');
+        }
+
+        allQuestions = parseQuestions(rawData);
+        document.getElementById('stats').innerHTML = `Đã tải thành công <strong>${allQuestions.length}</strong> câu hỏi!`;
+        updateWrongCount();
+        initTestBatches(); 
+        showAll(); 
+    </script>
+</body>
+</html>

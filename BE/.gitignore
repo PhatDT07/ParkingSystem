@@ -1,0 +1,13 @@
+target/
+*.class
+.idea/
+*.iml
+.vscode/
+.mvn/wrapper/maven-wrapper.jar
+HELP.md
+*.log
+.env
+.claude/launch.json
+application-local.yml
+src/main/resources/application-local.yml
+/docs
